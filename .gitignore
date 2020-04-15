@@ -1,5 +1,6 @@
 # Prerequisites
 *.d
+*.gb
 
 # Compiled Object files
 *.slo
@@ -30,3 +31,7 @@
 *.exe
 *.out
 *.app
+
+# Visual Studio files
+Debug/
+.vs/
