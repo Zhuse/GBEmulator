@@ -15,15 +15,54 @@ union Register
     };
 };
 
+class Memory;
 class CPU {
 private:
+    const unsigned int opcode_cycles[256] = {
+        1, 3, 2, 2, 1, 1, 2, 1, 5, 2, 2, 2, 1, 1, 2, 1,
+        1, 3, 2, 2, 1, 1, 2, 1, 3, 2, 2, 2, 1, 1, 2, 1,
+        2, 3, 2, 2, 1, 1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 1,
+        2, 3, 2, 2, 3, 3, 3, 1, 2, 2, 2, 2, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        2, 2, 2, 2, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        2, 3, 3, 4, 3, 4, 2, 4, 2, 4, 3, 0, 3, 6, 2, 4,
+        2, 3, 3, 0, 3, 4, 2, 4, 2, 4, 3, 0, 3, 0, 2, 4,
+        3, 3, 2, 0, 0, 4, 2, 4, 4, 1, 4, 0, 0, 0, 2, 4,
+        3, 3, 2, 1, 0, 4, 2, 4, 3, 2, 4, 1, 0, 0, 2, 4
+    };
+
     Register reg_AF;
     Register reg_BC;
     Register reg_DE;
     Register reg_HL;
     WORD PC;
     Register SP;
+    Memory* RAM;
 public: 
-    CPU();
+    CPU(Memory* RAM_ptr);
     void init();
+    unsigned int execute_opcode();
+    
+    void LOAD_8BIT(BYTE* reg);
+    void LOAD_16BIT(Register* reg);
+    void LOAD_8BIT_REG(BYTE* r1, BYTE* r2);
+    void LOAD_8BIT_FROM_MEM(BYTE* reg, WORD addr, WORD immediate);
+    void LOAD_8BIT_INTO_MEM(WORD addr, BYTE* reg, WORD immediate);
+    void LOAD_16BIT_FROM_MEM(Register* reg_16, BYTE* reg, WORD immediate);
+    void LOAD_8BIT_IMMEDIATE(BYTE* reg);
+    void LOAD_16BIT_IMMEDIATE(Register* reg);
+    void LDD_A_HL();
+    void LDD_HL_A();
+    void LDI_A_HL();
+    void LDI_HL_A();
+    void LDH_N_A();
+    void LDH_A_N();
+
+    void LOAD_16BIT_REG(Register* r1, Register* r2);
 };

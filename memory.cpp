@@ -1,6 +1,9 @@
 #include "memory.h"
 
-Memory::Memory() {}
+Memory::Memory(BYTE** cartridge_ptr) {
+    cartridge = cartridge_ptr;
+    init();
+}
 
 void Memory::init() {
     RAM[0xFF05] = 0x00;
@@ -58,4 +61,20 @@ void Memory::write_mem(WORD addr, BYTE data) {
     {
         RAM[addr] = data;
     }
+}
+
+// read memory should never modify member variables hence const
+BYTE Memory::read_mem(WORD addr) const
+{
+    if ((addr >= 0x4000) && (addr <= 0x7FFF))
+    {
+    }
+
+    else if ((addr >= 0xA000) && (addr <= 0xBFFF))
+    {
+
+    }
+
+    // else return memory
+    return RAM[addr];
 }
