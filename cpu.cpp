@@ -149,19 +149,138 @@ unsigned int CPU::execute_opcode() {
 	case 0xF0: LDH_A_N(); break;
 
 	/** LD n, nn **/
-	case 0x01: LOAD_16BIT_IMMEDIATE(&reg_BC);
-	case 0x11: LOAD_16BIT_IMMEDIATE(&reg_DE);
-	case 0x21: LOAD_16BIT_IMMEDIATE(&reg_HL);
-	case 0x31: LOAD_16BIT_IMMEDIATE(&SP);
+	case 0x01: LOAD_16BIT_IMMEDIATE(&reg_BC); break;
+	case 0x11: LOAD_16BIT_IMMEDIATE(&reg_DE); break;
+	case 0x21: LOAD_16BIT_IMMEDIATE(&reg_HL); break;
+	case 0x31: LOAD_16BIT_IMMEDIATE(&SP); break;
 
 
-	/** LD SP, HL**/
-	case 0xF9: LOAD_16BIT_REG(&SP, &reg_HL);
+	/** LD SP, HL **/
+	case 0xF9: LOAD_16BIT_REG(&SP, &reg_HL); break;
+
+	/** LDHL SP, n **/
+	case 0xF8: LOAD_16BIT_REG_IMMEDIATE(&reg_HL, &SP, RAM->read_mem(PC)); break;
+
+	/** LD (nn), SP **/
+	case 0x08: LD_NN_SP(0x0); break;
+
+	/** PUSH nn **/
+	case 0xF5: PUSH_NN(&reg_AF); break;
+	case 0xC5: PUSH_NN(&reg_BC); break;
+	case 0xD5: PUSH_NN(&reg_DE); break;
+	case 0xE5: PUSH_NN(&reg_HL); break;
+
+	/** POP nn **/
+	case 0xF1: POP_NN(&reg_AF); break;
+	case 0xC1: POP_NN(&reg_BC); break;
+	case 0xD1: POP_NN(&reg_DE); break;
+	case 0xE1: POP_NN(&reg_HL); break;
+
+	/** ADD A,n **/
+	case 0x87: ADD_N_N(&reg_AF.hi, reg_AF.hi, false, false); break;
+	case 0x80: ADD_N_N(&reg_AF.hi, reg_BC.hi, false, false); break;
+	case 0x81: ADD_N_N(&reg_AF.hi, reg_BC.lo, false, false); break;
+	case 0x82: ADD_N_N(&reg_AF.hi, reg_DE.hi, false, false); break;
+	case 0x83: ADD_N_N(&reg_AF.hi, reg_DE.lo, false, false); break;
+	case 0x84: ADD_N_N(&reg_AF.hi, reg_HL.hi, false, false); break;
+	case 0x85: ADD_N_N(&reg_AF.hi, reg_HL.lo, false, false); break;
+	case 0x86: ADD_N_N(&reg_AF.hi, RAM->read_mem(reg_HL.val), false, false); break;
+	case 0xC6: ADD_N_N(&reg_AF.hi, 0x0, true, false); break;
+
+	/** ADC A,n **/
+	case 0x8F: ADD_N_N(&reg_AF.hi, reg_AF.hi, false, true); break;
+	case 0x88: ADD_N_N(&reg_AF.hi, reg_BC.hi, false, true); break;
+	case 0x89: ADD_N_N(&reg_AF.hi, reg_BC.lo, false, true); break;
+	case 0x8A: ADD_N_N(&reg_AF.hi, reg_DE.hi, false, true); break;
+	case 0x8B: ADD_N_N(&reg_AF.hi, reg_DE.lo, false, true); break;
+	case 0x8C: ADD_N_N(&reg_AF.hi, reg_HL.hi, false, true); break;
+	case 0x8D: ADD_N_N(&reg_AF.hi, reg_HL.lo, false, true); break;
+	case 0x8E: ADD_N_N(&reg_AF.hi, RAM->read_mem(reg_HL.val), false, true); break;
+	case 0xCE: ADD_N_N(&reg_AF.hi, 0x0, true, true); break;
+
+	/** SDD A,n **/
+	case 0x97: SUB_N_N(&reg_AF.hi, reg_AF.hi, false, false); break;
+	case 0x90: SUB_N_N(&reg_AF.hi, reg_BC.hi, false, false); break;
+	case 0x91: SUB_N_N(&reg_AF.hi, reg_BC.lo, false, false); break;
+	case 0x92: SUB_N_N(&reg_AF.hi, reg_DE.hi, false, false); break;
+	case 0x93: SUB_N_N(&reg_AF.hi, reg_DE.lo, false, false); break;
+	case 0x94: SUB_N_N(&reg_AF.hi, reg_HL.hi, false, false); break;
+	case 0x95: SUB_N_N(&reg_AF.hi, reg_HL.lo, false, false); break;
+	case 0x96: SUB_N_N(&reg_AF.hi, RAM->read_mem(reg_HL.val), false, false); break;
+	case 0xD6: SUB_N_N(&reg_AF.hi, 0x0, true, false); break;
+
+	/** SDC A,n **/
+	case 0x9F: SUB_N_N(&reg_AF.hi, reg_AF.hi, false, true); break;
+	case 0x98: SUB_N_N(&reg_AF.hi, reg_BC.hi, false, true); break;
+	case 0x99: SUB_N_N(&reg_AF.hi, reg_BC.lo, false, true); break;
+	case 0x9A: SUB_N_N(&reg_AF.hi, reg_DE.hi, false, true); break;
+	case 0x9B: SUB_N_N(&reg_AF.hi, reg_DE.lo, false, true); break;
+	case 0x9C: SUB_N_N(&reg_AF.hi, reg_HL.hi, false, true); break;
+	case 0x9D: SUB_N_N(&reg_AF.hi, reg_HL.lo, false, true); break;
+	case 0x9E: SUB_N_N(&reg_AF.hi, 0x0, true, true); break;
+
+	/** AND n **/
+	case 0xA7: AND_N_N(&reg_AF.hi, reg_AF.hi, false); break;
+	case 0xA0: AND_N_N(&reg_AF.hi, reg_BC.hi, false); break;
+	case 0xA1: AND_N_N(&reg_AF.hi, reg_BC.lo, false); break;
+	case 0xA2: AND_N_N(&reg_AF.hi, reg_DE.hi, false); break;
+	case 0xA3: AND_N_N(&reg_AF.hi, reg_DE.lo, false); break;
+	case 0xA4: AND_N_N(&reg_AF.hi, reg_HL.hi, false); break;
+	case 0xA5: AND_N_N(&reg_AF.hi, reg_HL.lo, false); break;
+	case 0xA6: AND_N_N(&reg_AF.hi, RAM->read_mem(reg_HL.val), false); break;
+	case 0xE6: AND_N_N(&reg_AF.hi, 0x0, true); break;
+
+	/** OR n **/
+	case 0xB7: OR_N_N(&reg_AF.hi, reg_AF.hi, false); break;
+	case 0xB0: OR_N_N(&reg_AF.hi, reg_BC.hi, false); break;
+	case 0xB1: OR_N_N(&reg_AF.hi, reg_BC.lo, false); break;
+	case 0xB2: OR_N_N(&reg_AF.hi, reg_DE.hi, false); break;
+	case 0xB3: OR_N_N(&reg_AF.hi, reg_DE.lo, false); break;
+	case 0xB4: OR_N_N(&reg_AF.hi, reg_HL.hi, false); break;
+	case 0xB5: OR_N_N(&reg_AF.hi, reg_HL.lo, false); break;
+	case 0xB6: OR_N_N(&reg_AF.hi, RAM->read_mem(reg_HL.val), false); break;
+	case 0xF6: OR_N_N(&reg_AF.hi, 0x0, true); break;
+
+	/** XOR n **/
+	case 0xAF: XOR_N_N(&reg_AF.hi, reg_AF.hi, false); break;
+	case 0xA8: XOR_N_N(&reg_AF.hi, reg_BC.hi, false); break;
+	case 0xA9: XOR_N_N(&reg_AF.hi, reg_BC.lo, false); break;
+	case 0xAA: XOR_N_N(&reg_AF.hi, reg_DE.hi, false); break;
+	case 0xAB: XOR_N_N(&reg_AF.hi, reg_DE.lo, false); break;
+	case 0xAC: XOR_N_N(&reg_AF.hi, reg_HL.hi, false); break;
+	case 0xAD: XOR_N_N(&reg_AF.hi, reg_HL.lo, false); break;
+	case 0xAE: XOR_N_N(&reg_AF.hi, RAM->read_mem(reg_HL.val), false); break;
+	case 0xEE: XOR_N_N(&reg_AF.hi, 0x0, true); break;
+
+	/** CP n **/
+	case 0xBF: CP_N_N(&reg_AF.hi, reg_AF.hi, false); break;
+	case 0xB8: CP_N_N(&reg_AF.hi, reg_BC.hi, false); break;
+	case 0xB9: CP_N_N(&reg_AF.hi, reg_BC.lo, false); break;
+	case 0xBA: CP_N_N(&reg_AF.hi, reg_DE.hi, false); break;
+	case 0xBB: CP_N_N(&reg_AF.hi, reg_DE.lo, false); break;
+	case 0xBC: CP_N_N(&reg_AF.hi, reg_HL.hi, false); break;
+	case 0xBD: CP_N_N(&reg_AF.hi, reg_HL.lo, false); break;
+	case 0xBE: CP_N_N(&reg_AF.hi, RAM->read_mem(reg_HL.val), false); break;
+	case 0xFE: CP_N_N(&reg_AF.hi, 0x0, true); break;
+
+	/** INC n **/
+	case 0x3C: INC_N(&reg_AF.hi); break;
+	case 0x04: INC_N(&reg_BC.hi); break;
+	case 0x0C: INC_N(&reg_BC.hi); break;
+	case 0x14: INC_N(&reg_DE.hi); break;
+	case 0x1C: INC_N(&reg_DE.hi); break;
+	case 0x24: INC_N(&reg_HL.hi); break;
+	case 0x2C: INC_N(&reg_HL.hi); break;
+	case 0x34: 
+		BYTE b = RAM->read_mem(reg_HL.val);
+		INC_N(&b);
+		RAM->write_mem(reg_HL.val, b);
+		break;
 	}
 	return opcode_cycles[opcode];
 }
 
-/** 8 bit **/
+/** 8 bit load **/
 
 void CPU::LOAD_8BIT(BYTE* reg) {
 	*reg = RAM->read_mem(PC);
@@ -220,7 +339,7 @@ void CPU::LDH_N_A() {
 }
 
 
-/** 16 bit **/
+/** 16 bit load **/
 
 void CPU::LOAD_16BIT_IMMEDIATE(Register* reg) {
 	reg->val = RAM->read_mem((RAM->read_mem(PC) | RAM->read_mem(PC + 1)));
@@ -240,4 +359,243 @@ void CPU::LOAD_16BIT_FROM_MEM(Register* reg_16, BYTE* reg, WORD immediate) {
 
 void CPU::LOAD_16BIT_REG(Register* r1, Register* r2) {
 	r1->val = r2->val;
+}
+
+void CPU::LOAD_16BIT_REG_IMMEDIATE(Register* r1, Register* r2, WORD immediate) {
+	r1->val = r2->val + immediate;
+}
+
+void CPU::LD_NN_SP(WORD immediate) {
+	SP.val = PC + immediate;
+}
+
+void CPU::PUSH_NN(Register* reg) {
+	SP.val = reg->val;
+	SP.val -= 2;
+}
+
+void CPU::POP_NN(Register* reg) {
+	reg->val = SP.val;
+	SP.val += 2;
+}
+
+/** 8-bit arithmetic **/
+void CPU::ADD_N_N(BYTE* reg, BYTE val, bool immediate, bool carry) {
+	BYTE old = *reg;
+	BYTE adding = 0;
+
+	if (immediate)
+	{
+		BYTE n = RAM->read_mem(PC);
+		PC++;
+		adding = n;
+	}
+	else
+	{
+		adding = val;
+	}
+
+	if (carry)
+	{
+		if (BIT_CHECK(reg_AF.lo, FLAG_C))
+			adding++;
+	}
+
+	*reg += adding;
+
+	reg_AF.lo = 0;
+
+	if (*reg == 0) {
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_Z);
+	}
+
+	WORD htest = (old & 0xF);
+	htest += (adding & 0xF);
+
+	if (htest > 0xF)
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_H);
+
+	if ((old + adding) > 0xFF)
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_C);
+}
+
+void CPU::SUB_N_N(BYTE* reg, BYTE val, bool immediate, bool borrow) {
+	BYTE old = *reg;
+	BYTE sub = 0;
+
+	if (immediate)
+	{
+		BYTE n = RAM->read_mem(PC);
+		PC++;
+		sub = n;
+	}
+	else
+	{
+		sub = val;
+	}
+
+	if (borrow)
+	{
+		if (BIT_CHECK(reg_AF.lo, FLAG_C))
+			sub++;
+	}
+
+	*reg -= sub;
+
+	reg_AF.lo = 0;
+
+	if (*reg == 0) {
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_Z);
+	}
+
+	reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_N);
+
+	if (old < sub)
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_C);
+
+	SIGNED_WORD htest = (old & 0xF);
+	htest -= (sub & 0xF);
+
+	if (htest < 0)
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_H);
+}
+
+void CPU::AND_N_N(BYTE* reg, BYTE val, bool immediate) {
+	BYTE old = *reg;
+	BYTE anding = 0;
+
+	if (immediate)
+	{
+		BYTE n = RAM->read_mem(PC);
+		PC++;
+		anding = n;
+	}
+	else {
+		anding = val;
+	}
+
+	*reg &= anding;
+
+	reg_AF.lo = 0;
+
+	if (*reg == 0) {
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_Z);
+	}
+}
+
+void CPU::OR_N_N(BYTE* reg, BYTE val, bool immediate) {
+	BYTE old = *reg;
+	BYTE anding = 0;
+
+	if (immediate)
+	{
+		BYTE n = RAM->read_mem(PC);
+		PC++;
+		anding = n;
+	}
+	else {
+		anding = val;
+	}
+
+	*reg |= anding;
+
+	reg_AF.lo = 0;
+
+	if (*reg == 0) {
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_Z);
+	}
+}
+
+void CPU::XOR_N_N(BYTE* reg, BYTE val, bool immediate) {
+	BYTE old = *reg;
+	BYTE anding = 0;
+
+	if (immediate)
+	{
+		BYTE n = RAM->read_mem(PC);
+		PC++;
+		anding = n;
+	}
+	else {
+		anding = val;
+	}
+
+	*reg |= anding;
+
+	reg_AF.lo = 0;
+
+	if (*reg == 0) {
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_Z);
+	}
+}
+
+void CPU::CP_N_N(BYTE* reg, BYTE val, bool immediate) {
+	BYTE old = *reg;
+	BYTE result = 0;
+	BYTE sub = 0;
+
+	if (immediate)
+	{
+		BYTE n = RAM->read_mem(PC);
+		PC++;
+		sub = n;
+	}
+	else
+	{
+		sub = val;
+	}
+
+	result = old - sub;
+	reg_AF.lo = 0;
+
+	if (result == 0) {
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_Z);
+	}
+
+	reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_N);
+
+	if (old < sub)
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_C);
+
+	SIGNED_WORD htest = (old & 0xF);
+	htest -= (sub & 0xF);
+
+	if (htest < 0)
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_H);
+}
+
+void CPU::INC_N(BYTE* reg) {
+	BYTE old = *reg;
+
+	*reg += 1;
+
+	BIT_CLEAR(reg_AF.lo, FLAG_N);
+
+	if (*reg == 0) {
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_Z);
+	}
+
+	WORD htest = (old & 0xF);
+	htest += 0x1;
+
+	if (htest > 0x7)
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_H);
+}
+
+void CPU::DEC_N(BYTE* reg) {
+	BYTE old = *reg;
+
+	*reg -= 1;
+
+	BIT_SET(reg_AF.lo, FLAG_N);
+
+	if (*reg == 0) {
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_Z);
+	}
+
+	WORD htest = (old & 0xF);
+	htest -= 0x1;
+
+	if (htest > 0xF)
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_H);
 }

@@ -4,7 +4,10 @@
 #define FLAG_N 6
 #define FLAG_H 5
 #define FLAG_C 4
-
+#define BIT_SET(a,b) ((a) |= (1ULL<<(b)))
+#define BIT_CLEAR(a,b) ((a) &= ~(1ULL<<(b)))
+#define BIT_FLIP(a,b) ((a) ^= (1ULL<<(b)))
+#define BIT_CHECK(a,b) (!!((a) & (1ULL<<(b))))
 union Register
 {
     WORD val;
@@ -65,4 +68,17 @@ public:
     void LDH_A_N();
 
     void LOAD_16BIT_REG(Register* r1, Register* r2);
+    void LOAD_16BIT_REG_IMMEDIATE(Register* r1, Register* r2, WORD immediate);
+    void LD_NN_SP(WORD immediate);
+    void PUSH_NN(Register* reg);
+    void POP_NN(Register* reg);
+
+    void ADD_N_N(BYTE* reg, BYTE val, bool immediate, bool carry);
+    void SUB_N_N(BYTE* reg, BYTE val, bool immediate, bool carry);
+    void AND_N_N(BYTE* reg, BYTE val, bool immediate);
+    void OR_N_N(BYTE* reg, BYTE val, bool immediate);
+    void XOR_N_N(BYTE* reg, BYTE val, bool immediate);
+    void CP_N_N(BYTE* reg, BYTE val, bool immediate);
+    void INC_N(BYTE* reg);
+    void DEC_N(BYTE* reg);
 };
