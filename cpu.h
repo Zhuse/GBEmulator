@@ -8,6 +8,7 @@
 #define BIT_CLEAR(a,b) ((a) &= ~(1ULL<<(b)))
 #define BIT_FLIP(a,b) ((a) ^= (1ULL<<(b)))
 #define BIT_CHECK(a,b) (!!((a) & (1ULL<<(b))))
+
 union Register
 {
     WORD val;
@@ -40,18 +41,34 @@ private:
         3, 3, 2, 1, 0, 4, 2, 4, 3, 2, 4, 1, 0, 0, 2, 4
     };
 
+    const unsigned int opcode_cycles_cb[256] = {
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2
+    };
+
     Register reg_AF;
     Register reg_BC;
     Register reg_DE;
     Register reg_HL;
+    BYTE* registers[8] = {&(reg_BC.hi), &(reg_BC.lo), &(reg_DE.hi),  &(reg_DE.lo),  &(reg_HL.hi),  &(reg_HL.lo), 0,  &(reg_AF.hi)};
     WORD PC;
     Register SP;
     Memory* RAM;
-public: 
-    CPU(Memory* RAM_ptr);
-    void init();
-    unsigned int execute_opcode();
-    
+
     void LOAD_8BIT(BYTE* reg);
     void LOAD_16BIT(Register* reg);
     void LOAD_8BIT_REG(BYTE* r1, BYTE* r2);
@@ -81,4 +98,32 @@ public:
     void CP_N_N(BYTE* reg, BYTE val, bool immediate);
     void INC_N(BYTE* reg);
     void DEC_N(BYTE* reg);
+
+    void ADD_HL(Register* reg);
+    void ADD_SP();
+    void INC_NN(Register* reg);
+    void DEC_NN(Register* reg);
+    void SWAP(BYTE* reg);
+    void DAA();
+    void CPL();
+    void CCF();
+    void SCF();
+    void RLC(BYTE* reg);
+    void RL(BYTE* reg);
+    void RRC(BYTE* reg);
+    void RR(BYTE* reg);
+    void SLA(BYTE* reg);
+    void SRA(BYTE* reg);
+    void SRL(BYTE* reg);
+    void BIT_HELPER(BYTE opcode);
+    void BIT_B_R(BYTE* reg, unsigned int index);
+    void RES_HELPER(BYTE opcode);
+    void RES_B_R(BYTE* reg, unsigned int index);
+    void SET_HELPER(BYTE opcode);
+    void SET_B_R(BYTE* reg, unsigned int index);
+public: 
+    CPU(Memory* RAM_ptr);
+    void init();
+    unsigned int execute_opcode();
+    unsigned int execute_next_opcode();
 };

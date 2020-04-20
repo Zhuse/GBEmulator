@@ -18,7 +18,7 @@ unsigned int CPU::execute_opcode() {
 	BYTE opcode = 0x0;
 
 	//Fetch opCode
-	opcode = (RAM->read_mem(PC) << 8 | (RAM->read_mem(PC + 1)));
+	opcode = RAM->read_mem(PC);
 	switch (opcode) {
 
 	// LD nn,n
@@ -271,15 +271,268 @@ unsigned int CPU::execute_opcode() {
 	case 0x1C: INC_N(&reg_DE.hi); break;
 	case 0x24: INC_N(&reg_HL.hi); break;
 	case 0x2C: INC_N(&reg_HL.hi); break;
-	case 0x34: 
+	case 0x34: {
 		BYTE b = RAM->read_mem(reg_HL.val);
 		INC_N(&b);
 		RAM->write_mem(reg_HL.val, b);
 		break;
 	}
+
+	/** ADD HL, n **/
+	case 0x09: ADD_HL(&reg_BC); break;
+	case 0x19: ADD_HL(&reg_DE); break;
+	case 0x29: ADD_HL(&reg_HL); break;
+	case 0x39: ADD_HL(&SP); break;
+
+	/** ADD SP, n **/
+	case 0xE8: ADD_SP(); break;
+
+	/** INC nn **/
+	case 0x03: INC_NN(&reg_BC); break;
+	case 0x13: INC_NN(&reg_DE); break;
+	case 0x23: INC_NN(&reg_HL); break;
+	case 0x33: INC_NN(&SP); break;
+
+	/** DEC nn **/
+	case 0x0B: DEC_NN(&reg_BC); break;
+	case 0x1B: DEC_NN(&reg_DE); break;
+	case 0x2B: DEC_NN(&reg_HL); break;
+	case 0x3B: DEC_NN(&SP); break;
+
+	/** CB **/
+	case 0xCB: return execute_next_opcode();
+
+	/** DAA **/
+	case 0x27: DAA(); break;
+
+	/** CPL **/
+	case 0x2F: CPL(); break;
+
+	/** CCF **/
+	case 0x3F: CCF(); break;
+
+	/** CCF **/
+	case 0x37: SCF(); break;
+
+	/** NOP **/
+	case 0x00: break;
+
+	/** STOP/HALT **/
+	case 0x10:
+	case 0x76: PC--;  break;
+
+	/** RLCA **/
+	case 0x07: RLC(&reg_AF.hi); break;
+	
+	/** RLA **/
+	case 0x17: RL(&reg_AF.hi); break;
+	
+	/** RLCA **/
+	case 0x0F: RRC(&reg_AF.hi); break;
+
+	/** RLA **/
+	case 0x1F: RR(&reg_AF.hi); break;
+	}
 	return opcode_cycles[opcode];
 }
 
+unsigned int CPU::execute_next_opcode() {
+	BYTE opcode = 0x0;
+
+	//Fetch opCode
+	opcode = RAM->read_mem(PC);
+
+	switch (opcode) {
+	case 0x37: SWAP(&reg_AF.hi); break;
+	case 0x30: SWAP(&reg_BC.hi); break;
+	case 0x31: SWAP(&reg_BC.lo); break;
+	case 0x32: SWAP(&reg_DE.hi); break;
+	case 0x33: SWAP(&reg_DE.lo); break;
+	case 0x34: SWAP(&reg_HL.hi); break;
+	case 0x35: SWAP(&reg_HL.lo); break;
+	case 0x36: {
+		BYTE data = RAM->read_mem(reg_HL.val);
+		SWAP(&data);
+		RAM->write_mem(reg_HL.val, data);
+		break;
+	}
+
+		/** RLC **/
+	case 0x07: RLC(&reg_AF.hi); break;
+	case 0x00: RLC(&reg_BC.hi); break;
+	case 0x01: RLC(&reg_BC.lo); break;
+	case 0x02: RLC(&reg_DE.hi); break;
+	case 0x03: RLC(&reg_DE.lo); break;
+	case 0x04: RLC(&reg_HL.hi); break;
+	case 0x05: RLC(&reg_HL.lo); break;
+	case 0x06: {
+		BYTE data = RAM->read_mem(reg_HL.val);
+		RLC(&data);
+		RAM->write_mem(reg_HL.val, data);
+		break;
+	}
+
+		/** RL **/
+	case 0x17: RL(&reg_AF.hi); break;
+	case 0x10: RL(&reg_BC.hi); break;
+	case 0x11: RL(&reg_BC.lo); break;
+	case 0x12: RL(&reg_DE.hi); break;
+	case 0x13: RL(&reg_DE.lo); break;
+	case 0x14: RL(&reg_HL.hi); break;
+	case 0x15: RL(&reg_HL.lo); break;
+	case 0x16: {
+		BYTE data = RAM->read_mem(reg_HL.val);
+		RL(&data);
+		RAM->write_mem(reg_HL.val, data);
+		break;
+	}
+
+		/** RRC **/
+	case 0x0F: RRC(&reg_AF.hi); break;
+	case 0x08: RRC(&reg_BC.hi); break;
+	case 0x09: RRC(&reg_BC.lo); break;
+	case 0x0A: RRC(&reg_DE.hi); break;
+	case 0x0B: RRC(&reg_DE.lo); break;
+	case 0x0C: RRC(&reg_HL.hi); break;
+	case 0x0D: RRC(&reg_HL.lo); break;
+	case 0x0E: {
+		BYTE data = RAM->read_mem(reg_HL.val);
+		RRC(&data);
+		RAM->write_mem(reg_HL.val, data);
+		break;
+	}
+		/** RR **/
+	case 0x1F: RR(&reg_AF.hi); break;
+	case 0x18: RR(&reg_BC.hi); break;
+	case 0x19: RR(&reg_BC.lo); break;
+	case 0x1A: RR(&reg_DE.hi); break;
+	case 0x1B: RR(&reg_DE.lo); break;
+	case 0x1C: RR(&reg_HL.hi); break;
+	case 0x1D: RR(&reg_HL.lo); break;
+	case 0x1E: {
+		BYTE data = RAM->read_mem(reg_HL.val);
+		RR(&data);
+		RAM->write_mem(reg_HL.val, data);
+		break;
+	}
+
+	/** SLA **/
+	case 0x27: SLA(&reg_AF.hi); break;
+	case 0x20: SLA(&reg_BC.hi); break;
+	case 0x21: SLA(&reg_BC.lo); break;
+	case 0x22: SLA(&reg_DE.hi); break;
+	case 0x23: SLA(&reg_DE.lo); break;
+	case 0x24: SLA(&reg_HL.hi); break;
+	case 0x25: SLA(&reg_HL.lo); break;
+	case 0x26: {
+		BYTE data = RAM->read_mem(reg_HL.val);
+		SLA(&data);
+		RAM->write_mem(reg_HL.val, data);
+		break;
+	}
+
+	/** SRA **/
+	case 0x2F: SRA(&reg_AF.hi); break;
+	case 0x28: SRA(&reg_BC.hi); break;
+	case 0x29: SRA(&reg_BC.lo); break;
+	case 0x2A: SRA(&reg_DE.hi); break;
+	case 0x2B: SRA(&reg_DE.lo); break;
+	case 0x2C: SRA(&reg_HL.hi); break;
+	case 0x2D: SRA(&reg_HL.lo); break;
+	case 0x2E: {
+		BYTE data = RAM->read_mem(reg_HL.val);
+		SRA(&data);
+		RAM->write_mem(reg_HL.val, data);
+		break;
+	}
+
+	/** SRL **/
+	case 0x3F: SRL(&reg_AF.hi); break;
+	case 0x38: SRL(&reg_BC.hi); break;
+	case 0x39: SRL(&reg_BC.lo); break;
+	case 0x3A: SRL(&reg_DE.hi); break;
+	case 0x3B: SRL(&reg_DE.lo); break;
+	case 0x3C: SRL(&reg_HL.hi); break;
+	case 0x3D: SRL(&reg_HL.lo); break;
+	case 0x3E: {
+		BYTE data = RAM->read_mem(reg_HL.val);
+		SRL(&data);
+		RAM->write_mem(reg_HL.val, data);
+		break;
+	}
+	/** BIT **/
+	case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x47:
+	case 0x48: case 0x49: case 0x4A: case 0x4B: case 0x4C: case 0x4D: case 0x4F:
+	case 0x50: case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x57:
+	case 0x58: case 0x59: case 0x5A: case 0x5B: case 0x5C: case 0x5D: case 0x5F:
+	case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x67:
+	case 0x68: case 0x69: case 0x6A: case 0x6B: case 0x6C: case 0x6D: case 0x6F:
+	case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x77:
+	case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7F: {
+		BIT_HELPER(opcode);
+		break;
+	}
+	case 0x46: case 0x4E: case 0x56: case 0x5E: case 0x66: case 0x6E: case 0x76: case 0x7E: {
+		BYTE hi_nibble = opcode & 0xF0;
+		BYTE lo_nibble = opcode & 0xF;
+		BYTE index_base = 2 * (hi_nibble - 0x4);
+		BYTE index_add = lo_nibble / (0x8);
+		BYTE data = RAM->read_mem(reg_HL.val);
+		BIT_B_R(&data, index_base + index_add);
+		break;
+	}
+
+	/** RES **/
+	case 0x80: case 0x81: case 0x82: case 0x83: case 0x84: case 0x85: case 0x87:
+	case 0x88: case 0x89: case 0x8A: case 0x8B: case 0x8C: case 0x8D: case 0x8F:
+	case 0x90: case 0x91: case 0x92: case 0x93: case 0x94: case 0x95: case 0x97:
+	case 0x98: case 0x99: case 0x9A: case 0x9B: case 0x9C: case 0x9D: case 0x9F:
+	case 0xA0: case 0xA1: case 0xA2: case 0xA3: case 0xA4: case 0xA5: case 0xA7:
+	case 0xA8: case 0xA9: case 0xAA: case 0xAB: case 0xAC: case 0xAD: case 0xAF:
+	case 0xB0: case 0xB1: case 0xB2: case 0xB3: case 0xB4: case 0xB5: case 0xB7:
+	case 0xB8: case 0xB9: case 0xBA: case 0xBB: case 0xBC: case 0xBD: case 0xBF: {
+		RES_HELPER(opcode);
+		break;
+	}
+
+	case 0x86: case 0x8E: case 0x96: case 0x9E: case 0xA6: case 0xAE: case 0xB6: case 0xBE: {
+		BYTE hi_nibble = opcode & 0xF0;
+		BYTE lo_nibble = opcode & 0xF;
+		BYTE index_base = 2 * (hi_nibble - 0x8);
+		BYTE index_add = lo_nibble / (0x8);
+		BYTE data = RAM->read_mem(reg_HL.val);
+		RES_B_R(&data, index_base + index_add);
+		RAM->write_mem(reg_HL.val, data);
+		break;
+	}
+
+	/** SET **/
+	case 0xC0: case 0xC1: case 0xC2: case 0xC3: case 0xC4: case 0xC5: case 0xC7:
+	case 0xC8: case 0xC9: case 0xCA: case 0xCB: case 0xCC: case 0xCD: case 0xCF:
+	case 0xD0: case 0xD1: case 0xD2: case 0xD3: case 0xD4: case 0xD5: case 0xD7:
+	case 0xD8: case 0xD9: case 0xDA: case 0xDB: case 0xDC: case 0xDD: case 0xDF:
+	case 0xE0: case 0xE1: case 0xE2: case 0xE3: case 0xE4: case 0xE5: case 0xE7:
+	case 0xE8: case 0xE9: case 0xEA: case 0xEB: case 0xEC: case 0xED: case 0xEF:
+	case 0xF0: case 0xF1: case 0xF2: case 0xF3: case 0xF4: case 0xF5: case 0xF7:
+	case 0xF8: case 0xF9: case 0xFA: case 0xFB: case 0xFC: case 0xFD: case 0xFF: {
+		SET_HELPER(opcode);
+		break;
+	}
+
+	case 0xC6: case 0xCE: case 0xD6: case 0xDE: case 0xE6: case 0xEE: case 0xF6: case 0xFE: {
+		BYTE hi_nibble = opcode & 0xF0;
+		BYTE lo_nibble = opcode & 0xF;
+		BYTE index_base = 2 * (hi_nibble - 0xC);
+		BYTE index_add = lo_nibble / (0x8);
+		BYTE data = RAM->read_mem(reg_HL.val);
+		SET_B_R(&data, index_base + index_add);
+		RAM->write_mem(reg_HL.val, data);
+		break;
+	}
+	}
+
+	return opcode_cycles_cb[opcode];
+}
 /** 8 bit load **/
 
 void CPU::LOAD_8BIT(BYTE* reg) {
@@ -598,4 +851,241 @@ void CPU::DEC_N(BYTE* reg) {
 
 	if (htest > 0xF)
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_H);
+}
+
+/** 16 bit arithmetic **/
+
+void CPU::ADD_HL(Register* reg) {
+	BYTE old = reg_HL.val;
+
+	reg_HL.val += reg->val;
+
+	BIT_CLEAR(reg_AF.lo, FLAG_N);
+
+	WORD htest = (old & 0xF);
+	htest += (reg_HL.val & 0xF);
+
+	if (htest > 0x0FFF)
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_H);
+
+	if (old  > reg_HL.val)
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_C);
+}
+
+void CPU::ADD_SP() {
+	BYTE old = SP.val;
+	BYTE data = RAM->read_mem(PC);
+	BYTE result = SP.val + RAM->read_mem(PC);
+
+	reg_AF.lo = 0;
+
+	if (((SP.val ^ data ^ (result & 0xFFFF)) & 0x100) == 0x100)
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_C);
+
+	if (((SP.val ^ data ^ (result & 0xFFFF)) & 0x10) == 0x10)
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_H);
+
+	SP.val = result;
+}
+
+void CPU::INC_NN(Register* reg) {
+	reg->val++;
+}
+
+void CPU::DEC_NN(Register* reg) {
+	reg->val--;
+}
+
+void CPU::SWAP(BYTE* reg) {
+	BYTE old = *reg;
+	*reg = ((old & 0x0F) << 4 | (old & 0xF0) >> 4);
+}
+
+void CPU::DAA() {
+	BYTE old = reg_AF.hi;	
+	BYTE result = 0;
+	BYTE shift = 0;
+	if (reg_AF.hi == 0x0)
+		BIT_SET(reg_AF.lo, FLAG_Z);
+	if (reg_AF.hi >= 99)
+		BIT_SET(reg_AF.lo, FLAG_C);
+	else
+		BIT_CLEAR(reg_AF.lo, FLAG_C);
+	
+	BIT_SET(reg_AF.lo, FLAG_H);
+
+	while (old > 0) {
+		result |= (old % 10) << (shift++ << 2);
+		old /= 10;
+	}
+	reg_AF.hi = result;
+}
+
+void CPU::CPL() {
+	reg_AF.hi = ~reg_AF.hi;
+	BIT_SET(reg_AF.lo, FLAG_N);
+	BIT_SET(reg_AF.lo, FLAG_H);
+}
+
+void CPU::CCF() {
+	BIT_FLIP(reg_AF.lo, FLAG_C);
+}
+
+void CPU::SCF() {
+	BIT_CLEAR(reg_AF.lo, FLAG_N);
+	BIT_CLEAR(reg_AF.lo, FLAG_H);
+	BIT_SET(reg_AF.lo, FLAG_C);
+}
+
+void CPU::RLC(BYTE* reg) {
+	BYTE old = *reg;
+	BIT_CLEAR(reg_AF.lo, FLAG_N);
+	BIT_CLEAR(reg_AF.lo, FLAG_H);
+	if (*reg == 0)
+		BIT_SET(reg_AF.lo, FLAG_Z);
+	
+	if (BIT_CHECK(*reg, 7))
+		BIT_SET(reg_AF.lo, FLAG_C);
+	else
+		BIT_CLEAR(reg_AF.lo, FLAG_C);
+
+	*reg = (old << 1) | (old >> 7);
+}
+
+void CPU::RL(BYTE* reg) {
+	BYTE old = *reg;
+	BIT_CLEAR(reg_AF.lo, FLAG_N);
+	BIT_CLEAR(reg_AF.lo, FLAG_H);
+	BIT_CLEAR(reg_AF.lo, FLAG_Z);
+
+	if (BIT_CHECK(*reg, 7))
+		BIT_SET(reg_AF.lo, FLAG_C);
+	else
+		BIT_CLEAR(reg_AF.lo, FLAG_C);
+
+	*reg = (old << 1) | (old >> 7);
+}
+
+void CPU::RRC(BYTE* reg) {
+	BYTE old = *reg;
+	BIT_CLEAR(reg_AF.lo, FLAG_N);
+	BIT_CLEAR(reg_AF.lo, FLAG_H);
+	if (*reg == 0)
+		BIT_SET(reg_AF.lo, FLAG_Z);
+
+	if (BIT_CHECK(*reg, 0))
+		BIT_SET(reg_AF.lo, FLAG_C);
+	else
+		BIT_CLEAR(reg_AF.lo, FLAG_C);
+
+	*reg = (old >> 1) | (old << 7);
+}
+
+void CPU::RR(BYTE* reg) {
+	BYTE old = *reg;
+	BIT_CLEAR(reg_AF.lo, FLAG_N);
+	BIT_CLEAR(reg_AF.lo, FLAG_H);
+	BIT_CLEAR(reg_AF.lo, FLAG_Z);
+
+	if (BIT_CHECK(old, 0))
+		BIT_SET(reg_AF.lo, FLAG_C);
+	else
+		BIT_CLEAR(reg_AF.lo, FLAG_C);
+
+	*reg = (old >> 1) | (old << 7);
+}
+
+void CPU::SLA(BYTE* reg) {
+	BYTE old = *reg;
+	BIT_CLEAR(reg_AF.lo, FLAG_N);
+	BIT_CLEAR(reg_AF.lo, FLAG_H);
+	if (*reg == 0)
+		BIT_SET(reg_AF.lo, FLAG_Z);
+
+	if (BIT_CHECK(*reg, 7))
+		BIT_SET(reg_AF.lo, FLAG_C);
+	else
+		BIT_CLEAR(reg_AF.lo, FLAG_C);
+
+	*reg = (old << 1);
+}
+
+void CPU::SRA(BYTE* reg) {
+	BYTE old = *reg;
+	BIT_CLEAR(reg_AF.lo, FLAG_N);
+	BIT_CLEAR(reg_AF.lo, FLAG_H);
+	*reg = (old >> 1);
+
+	if (old == 0)
+		BIT_SET(reg_AF.lo, FLAG_Z);
+
+	if (BIT_CHECK(old, 7))
+		BIT_SET(*reg, 7);
+	else
+		BIT_CLEAR(*reg, 7);
+
+	if (BIT_CHECK(old, 0))
+		BIT_SET(reg_AF.lo, FLAG_C);
+	else
+		BIT_CLEAR(reg_AF.lo, FLAG_C);
+}
+
+void CPU::SRL(BYTE* reg) {
+	BYTE old = *reg;
+	BIT_CLEAR(reg_AF.lo, FLAG_N);
+	BIT_CLEAR(reg_AF.lo, FLAG_H);
+
+	if (old == 0)
+		BIT_SET(reg_AF.lo, FLAG_Z);
+
+	if (BIT_CHECK(old, 0))
+		BIT_SET(reg_AF.lo, FLAG_C);
+	else
+		BIT_CLEAR(reg_AF.lo, FLAG_C);
+
+	*reg = (old >> 1);
+
+}
+
+void CPU::BIT_HELPER(BYTE opcode) {
+	BYTE hi_nibble = opcode & 0xF0;
+	BYTE lo_nibble = opcode & 0xF;
+	BYTE* reg = registers[lo_nibble % 8];
+	BYTE index_base = 2*(hi_nibble - 0x4);
+	BYTE index_add = lo_nibble / (0x8);
+	BIT_B_R(reg, index_base + index_add);
+}
+
+void CPU::BIT_B_R(BYTE* reg, unsigned int index) {
+	if (!BIT_CHECK(*reg, index))
+		BIT_SET(reg_AF.lo, FLAG_Z);
+
+	BIT_CLEAR(reg_AF.lo, FLAG_N);
+	BIT_SET(reg_AF.lo, FLAG_H);
+}
+
+void CPU::RES_HELPER(BYTE opcode) {
+	BYTE hi_nibble = opcode & 0xF0;
+	BYTE lo_nibble = opcode & 0xF;
+	BYTE* reg = registers[lo_nibble % 8];
+	BYTE index_base = 2 * (hi_nibble - 0x8);
+	BYTE index_add = lo_nibble / (0x8);
+	RES_B_R(reg, index_base + index_add);
+}
+
+void CPU::RES_B_R(BYTE* reg, unsigned int index) {
+	BIT_CLEAR(*reg, index);
+}
+
+void CPU::SET_HELPER(BYTE opcode) {
+	BYTE hi_nibble = opcode & 0xF0;
+	BYTE lo_nibble = opcode & 0xF;
+	BYTE* reg = registers[lo_nibble % 0xC];
+	BYTE index_base = 2 * (hi_nibble - 0x8);
+	BYTE index_add = lo_nibble / (0x8);
+	SET_B_R(reg, index_base + index_add);
+}
+
+void CPU::SET_B_R(BYTE* reg, unsigned int index) {
+	BIT_SET(*reg, index);
 }
