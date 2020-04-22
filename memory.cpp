@@ -1,11 +1,17 @@
 #include "memory.h"
-
-Memory::Memory(BYTE** cartridge_ptr) {
+#include "iostream"
+Memory::Memory(BYTE* cartridge_ptr) {
     cartridge = cartridge_ptr;
     init();
 }
 
 void Memory::init() {
+    for (int i = 0; i < 0xFFFF; i++) {
+        RAM[i] = 0x0;
+    }
+    for (int i = 0x100; i < 32768; i++) {
+        RAM[i] = cartridge[i];
+    }
     RAM[0xFF05] = 0x00;
     RAM[0xFF06] = 0x00;
     RAM[0xFF07] = 0x00;
@@ -39,6 +45,11 @@ void Memory::init() {
     RAM[0xFFFF] = 0x00;
 }
 void Memory::write_mem(WORD addr, BYTE data) {
+
+    if (addr == 0xFF02 && data == 0x81) {
+        std::cout << read_mem(0xFF01);
+        return;
+    }
 
     if (addr < 0x8000)
     {

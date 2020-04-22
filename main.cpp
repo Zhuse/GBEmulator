@@ -3,7 +3,8 @@
 
 int main() {
 	Emulator *emu = new Emulator();
-	emu->load_cartridge();
-	emu->tick();
+	while (true) {
+		emu->tick();
+	}
 	return 0;
 }

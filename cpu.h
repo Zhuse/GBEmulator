@@ -69,12 +69,13 @@ private:
     Register SP;
     Memory* RAM;
 
+    void print_state();
     void LOAD_8BIT(BYTE* reg);
     void LOAD_16BIT(Register* reg);
     void LOAD_8BIT_REG(BYTE* r1, BYTE* r2);
     void LOAD_8BIT_FROM_MEM(BYTE* reg, WORD addr, WORD immediate);
     void LOAD_8BIT_INTO_MEM(WORD addr, BYTE* reg, WORD immediate);
-    void LOAD_16BIT_FROM_MEM(Register* reg_16, BYTE* reg, WORD immediate);
+    void LOAD_16BIT_TO_MEM(Register* reg_16, BYTE* reg);
     void LOAD_8BIT_IMMEDIATE(BYTE* reg);
     void LOAD_16BIT_IMMEDIATE(Register* reg);
     void LDD_A_HL();
@@ -87,8 +88,8 @@ private:
     void LOAD_16BIT_REG(Register* r1, Register* r2);
     void LOAD_16BIT_REG_IMMEDIATE(Register* r1, Register* r2, WORD immediate);
     void LD_NN_SP(WORD immediate);
-    void PUSH_NN(Register* reg);
-    void POP_NN(Register* reg);
+    void PUSH_NN(WORD addr);
+    void POP_NN(WORD* reg);
 
     void ADD_N_N(BYTE* reg, BYTE val, bool immediate, bool carry);
     void SUB_N_N(BYTE* reg, BYTE val, bool immediate, bool carry);
@@ -121,6 +122,13 @@ private:
     void RES_B_R(BYTE* reg, unsigned int index);
     void SET_HELPER(BYTE opcode);
     void SET_B_R(BYTE* reg, unsigned int index);
+    void JP_CC(bool nz, bool z, bool nc, bool c);
+    void JR_CC(bool nz, bool z, bool nc, bool c);
+    void CALL();
+    void CALL_CC(bool nz, bool z, bool nc, bool c);
+    void RST(BYTE immediate);
+    void RET();
+    void RET_CC(bool nz, bool z, bool nc, bool c);
 public: 
     CPU(Memory* RAM_ptr);
     void init();

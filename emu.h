@@ -1,9 +1,13 @@
 #include "constants.h"
 
+class Memory;
+class CPU;
 class Emulator
 {
 private:
     const unsigned int MAX_CYCLES = 69905;
+    Memory* mem;
+    CPU* cpu;
     BYTE screen[160][144][3];
 
 public:
@@ -11,6 +15,5 @@ public:
 
     Emulator();
     void tick();
-    void init_mem();
     void load_cartridge();
 };

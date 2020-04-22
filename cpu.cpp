@@ -1,7 +1,8 @@
 #include "cpu.h"
 #include "memory.h"
-
+#include "iostream"
 CPU::CPU(Memory* RAM_ptr) {
+	init();
 	RAM = RAM_ptr;
 }
 
@@ -18,7 +19,9 @@ unsigned int CPU::execute_opcode() {
 	BYTE opcode = 0x0;
 
 	//Fetch opCode
+
 	opcode = RAM->read_mem(PC);
+	PC++;
 	switch (opcode) {
 
 	// LD nn,n
@@ -96,12 +99,12 @@ unsigned int CPU::execute_opcode() {
 	case 0x6E: LOAD_8BIT_FROM_MEM(&reg_HL.lo, reg_HL.val, 0x0); break;
 
 		// HL
-	case 0x70: LOAD_16BIT_FROM_MEM(&reg_HL, &reg_BC.hi, 0x0); break;
-	case 0x71: LOAD_16BIT_FROM_MEM(&reg_HL, &reg_BC.lo, 0x0); break;
-	case 0x72: LOAD_16BIT_FROM_MEM(&reg_HL, &reg_DE.hi, 0x0); break;
-	case 0x73: LOAD_16BIT_FROM_MEM(&reg_HL, &reg_DE.lo, 0x0); break;
-	case 0x74: LOAD_16BIT_FROM_MEM(&reg_HL, &reg_HL.hi, 0x0); break;
-	case 0x75: LOAD_16BIT_FROM_MEM(&reg_HL, &reg_HL.lo, 0x0); break;
+	case 0x70: LOAD_16BIT_TO_MEM(&reg_HL, &reg_BC.hi); break;
+	case 0x71: LOAD_16BIT_TO_MEM(&reg_HL, &reg_BC.lo); break;
+	case 0x72: LOAD_16BIT_TO_MEM(&reg_HL, &reg_DE.hi); break;
+	case 0x73: LOAD_16BIT_TO_MEM(&reg_HL, &reg_DE.lo); break;
+	case 0x74: LOAD_16BIT_TO_MEM(&reg_HL, &reg_HL.hi); break;
+	case 0x75: LOAD_16BIT_TO_MEM(&reg_HL, &reg_HL.lo); break;
 	case 0x36: LOAD_16BIT(&reg_HL); break;
 
 
@@ -119,9 +122,9 @@ unsigned int CPU::execute_opcode() {
 	case 0x5F: LOAD_8BIT_REG(&reg_DE.lo, &reg_AF.hi); break;
 	case 0x67: LOAD_8BIT_REG(&reg_HL.hi, &reg_AF.hi); break;
 	case 0x6F: LOAD_8BIT_REG(&reg_HL.lo, &reg_AF.hi); break;
-	case 0x02: LOAD_16BIT_FROM_MEM(&reg_BC, &reg_AF.hi, 0x0); break;
-	case 0x12: LOAD_16BIT_FROM_MEM(&reg_DE, &reg_AF.hi, 0x0); break;
-	case 0x77: LOAD_16BIT_FROM_MEM(&reg_HL, &reg_AF.hi, 0x0); break;
+	case 0x02: LOAD_16BIT_TO_MEM(&reg_BC, &reg_AF.hi); break;
+	case 0x12: LOAD_16BIT_TO_MEM(&reg_DE, &reg_AF.hi); break;
+	case 0x77: LOAD_16BIT_TO_MEM(&reg_HL, &reg_AF.hi); break;
 	case 0xEA: LOAD_8BIT_IMMEDIATE(&reg_AF.hi); break;
 
 	/** LD A, (C) **/
@@ -165,16 +168,16 @@ unsigned int CPU::execute_opcode() {
 	case 0x08: LD_NN_SP(0x0); break;
 
 	/** PUSH nn **/
-	case 0xF5: PUSH_NN(&reg_AF); break;
-	case 0xC5: PUSH_NN(&reg_BC); break;
-	case 0xD5: PUSH_NN(&reg_DE); break;
-	case 0xE5: PUSH_NN(&reg_HL); break;
+	case 0xF5: PUSH_NN(reg_AF.val); break;
+	case 0xC5: PUSH_NN(reg_BC.val); break;
+	case 0xD5: PUSH_NN(reg_DE.val); break;
+	case 0xE5: PUSH_NN(reg_HL.val); break;
 
 	/** POP nn **/
-	case 0xF1: POP_NN(&reg_AF); break;
-	case 0xC1: POP_NN(&reg_BC); break;
-	case 0xD1: POP_NN(&reg_DE); break;
-	case 0xE1: POP_NN(&reg_HL); break;
+	case 0xF1: POP_NN(&(reg_AF.val)); break;
+	case 0xC1: POP_NN(&(reg_BC.val)); break;
+	case 0xD1: POP_NN(&(reg_DE.val)); break;
+	case 0xE1: POP_NN(&(reg_HL.val)); break;
 
 	/** ADD A,n **/
 	case 0x87: ADD_N_N(&reg_AF.hi, reg_AF.hi, false, false); break;
@@ -266,14 +269,29 @@ unsigned int CPU::execute_opcode() {
 	/** INC n **/
 	case 0x3C: INC_N(&reg_AF.hi); break;
 	case 0x04: INC_N(&reg_BC.hi); break;
-	case 0x0C: INC_N(&reg_BC.hi); break;
+	case 0x0C: INC_N(&reg_BC.lo); break;
 	case 0x14: INC_N(&reg_DE.hi); break;
-	case 0x1C: INC_N(&reg_DE.hi); break;
+	case 0x1C: INC_N(&reg_DE.lo); break;
 	case 0x24: INC_N(&reg_HL.hi); break;
-	case 0x2C: INC_N(&reg_HL.hi); break;
+	case 0x2C: INC_N(&reg_HL.lo); break;
 	case 0x34: {
 		BYTE b = RAM->read_mem(reg_HL.val);
 		INC_N(&b);
+		RAM->write_mem(reg_HL.val, b);
+		break;
+	}
+	
+	/** DEC n **/
+	case 0x3D: DEC_N(&reg_AF.hi); break;
+	case 0x05: DEC_N(&reg_BC.hi); break;
+	case 0x0D: DEC_N(&reg_BC.lo); break;
+	case 0x15: DEC_N(&reg_DE.hi); break;
+	case 0x1D: DEC_N(&reg_DE.lo); break;
+	case 0x25: DEC_N(&reg_HL.hi); break;
+	case 0x2D: DEC_N(&reg_HL.lo); break;
+	case 0x35: {
+		BYTE b = RAM->read_mem(reg_HL.val);
+		DEC_N(&b);
 		RAM->write_mem(reg_HL.val, b);
 		break;
 	}
@@ -332,6 +350,66 @@ unsigned int CPU::execute_opcode() {
 
 	/** RLA **/
 	case 0x1F: RR(&reg_AF.hi); break;
+
+	/** JP **/
+	case 0xC3: PC = (RAM->read_mem(PC + 1) << 8) | RAM->read_mem(PC); break;
+
+	/** JP cc **/
+	case 0xC2: JP_CC(true, false, false, false); break;
+	case 0xCA: JP_CC(false, true, false, false); break;
+	case 0xD2: JP_CC(false, false, true, false); break;
+	case 0xDA: JP_CC(false, false, false, true); break;
+
+	/** JP (HL) **/
+	case 0xE9: PC = RAM->read_mem(reg_HL.val); break;
+
+	/** JR n **/
+	case 0x18: {
+		BYTE result = RAM->read_mem(PC);
+		if (result < 0x80) {
+			PC += result;
+		}
+		else {
+			PC -= (0xFF - result);
+		}
+	}
+
+	/** JR cc **/
+	case 0x20: JR_CC(true, false, false, false); break;
+	case 0x28: JR_CC(false, true, false, false); break;
+	case 0x30: JR_CC(false, false, true, false); break;
+	case 0x38: JR_CC(false, false, false, true); break;
+
+	/** CALL nn **/
+	case 0xCD: CALL(); break;
+	
+	/** CALL cc **/
+	case 0xC4: CALL_CC(true, false, false, false); break;
+	case 0xCC: CALL_CC(false, true, false, false); break;
+	case 0xD4: CALL_CC(false, false, true, false); break;
+	case 0xDC: CALL_CC(false, false, false, true); break;
+
+	/** RST n **/
+	case 0xC7: RST(0x00); break;
+	case 0xCF: RST(0x08); break;
+	case 0xD7: RST(0x10); break;
+	case 0xDF: RST(0x18); break;
+	case 0xE7: RST(0x20); break;
+	case 0xEF: RST(0x28); break;
+	case 0xF7: RST(0x30); break;
+	case 0xFF: RST(0x38); break;
+
+	/** RET **/
+	case 0xC9: RET(); break;
+	
+	/** RET cc **/
+	case 0xC0: RET_CC(true, false, false, false); break;
+	case 0xC8: RET_CC(false, true, false, false); break;
+	case 0xD0: RET_CC(false, false, true, false); break;
+	case 0xD8: RET_CC(false, false, false, true); break;
+
+	/** RETI **/
+	case 0xD9: RET(); break;
 	}
 	return opcode_cycles[opcode];
 }
@@ -341,7 +419,7 @@ unsigned int CPU::execute_next_opcode() {
 
 	//Fetch opCode
 	opcode = RAM->read_mem(PC);
-
+	PC++;
 	switch (opcode) {
 	case 0x37: SWAP(&reg_AF.hi); break;
 	case 0x30: SWAP(&reg_BC.hi); break;
@@ -530,10 +608,23 @@ unsigned int CPU::execute_next_opcode() {
 		break;
 	}
 	}
-
 	return opcode_cycles_cb[opcode];
 }
 /** 8 bit load **/
+
+void CPU::print_state() {
+	printf("REG AF: %02X \n", reg_AF.val);
+	printf("REG BC: %02X \n", reg_BC.val);
+	printf("REG DE: %02X \n", reg_DE.val);
+	printf("REG HL: %02X \n", reg_HL.val);
+	printf("PC: %02X \n", PC);
+	printf("SP: %02X \n", SP);
+	printf("FLAG Z: %d\n", BIT_CHECK(reg_AF.lo, FLAG_Z));
+	printf("FLAG N: %d\n", BIT_CHECK(reg_AF.lo, FLAG_N));
+	printf("FLAG H: %d\n", BIT_CHECK(reg_AF.lo, FLAG_H));
+	printf("FLAG C: %d\n", BIT_CHECK(reg_AF.lo, FLAG_C));
+	printf("RAM[PC]: %02X, RAM[PC + 1]: %02X\n", RAM->read_mem(PC), RAM->read_mem(PC + 1));
+}
 
 void CPU::LOAD_8BIT(BYTE* reg) {
 	*reg = RAM->read_mem(PC);
@@ -541,7 +632,7 @@ void CPU::LOAD_8BIT(BYTE* reg) {
 }
 
 void CPU::LOAD_8BIT_IMMEDIATE(BYTE* reg) {
-	*reg = RAM->read_mem((RAM->read_mem(PC) | RAM->read_mem(PC + 1)));
+	*reg = RAM->read_mem((RAM->read_mem(PC + 1) << 8) | RAM->read_mem(PC));
 	PC += 2;
 }
 
@@ -560,54 +651,50 @@ void CPU::LOAD_8BIT_INTO_MEM(WORD addr, BYTE* reg, WORD immediate) {
 void CPU::LDD_A_HL() {
 	reg_AF.hi = RAM->read_mem(reg_HL.val);
 	reg_HL.val--;
-	PC += 1;
 }
 
 void CPU::LDD_HL_A() {
 	RAM->write_mem(reg_HL.val, reg_AF.hi);
 	reg_HL.val--;
-	PC += 1;
 }
 
 void CPU::LDI_A_HL() {
 	reg_AF.hi = RAM->read_mem(reg_HL.val);
 	reg_HL.val++;
-	PC += 1;
 }
 
 void CPU::LDI_HL_A() {
 	RAM->write_mem(reg_HL.val, reg_AF.hi);
 	reg_HL.val++;
-	PC += 1;
 }
 
 void CPU::LDH_A_N() {
 	RAM->write_mem(0xFF00 + RAM->read_mem(PC), reg_AF.hi);
-	PC += 3;
+	PC += 1;
 }
 
 void CPU::LDH_N_A() {
 	reg_AF.hi = RAM->read_mem(0xFF00 + RAM->read_mem(PC));
-	PC += 3;
+	PC += 1;
 }
 
 
 /** 16 bit load **/
 
 void CPU::LOAD_16BIT_IMMEDIATE(Register* reg) {
-	reg->val = RAM->read_mem((RAM->read_mem(PC) | RAM->read_mem(PC + 1)));
+	reg->val = (RAM->read_mem(PC + 1) << 8) | RAM->read_mem(PC);
 	PC += 2;
 }
 
 
 void CPU::LOAD_16BIT(Register* reg) {
-	reg->val = (RAM->read_mem(PC) | RAM->read_mem(PC + 1));
+	reg->val = ((RAM->read_mem(PC + 1) << 8) | RAM->read_mem(PC));
 	PC += 2;
 }
 
 
-void CPU::LOAD_16BIT_FROM_MEM(Register* reg_16, BYTE* reg, WORD immediate) {
-	reg_16->val = RAM->read_mem(*reg + immediate);
+void CPU::LOAD_16BIT_TO_MEM(Register* reg_16, BYTE* reg) {
+	 RAM->write_mem(reg_16->val, *reg);
 }
 
 void CPU::LOAD_16BIT_REG(Register* r1, Register* r2) {
@@ -622,13 +709,18 @@ void CPU::LD_NN_SP(WORD immediate) {
 	SP.val = PC + immediate;
 }
 
-void CPU::PUSH_NN(Register* reg) {
-	SP.val = reg->val;
-	SP.val -= 2;
+void CPU::PUSH_NN(WORD addr) {
+	BYTE hi_nibble = (addr & 0xFF00) >> 8;
+	BYTE lo_nibble = (addr & 0x00FF);
+	SP.val--;
+	RAM->write_mem(SP.val, lo_nibble);
+	SP.val--;
+	RAM->write_mem(SP.val, hi_nibble);
 }
 
-void CPU::POP_NN(Register* reg) {
-	reg->val = SP.val;
+void CPU::POP_NN(WORD* reg) {
+	WORD addr = (RAM->read_mem(SP.val) << 8) | (RAM->read_mem(SP.val + 1));
+	*reg = addr;
 	SP.val += 2;
 }
 
@@ -761,19 +853,19 @@ void CPU::OR_N_N(BYTE* reg, BYTE val, bool immediate) {
 
 void CPU::XOR_N_N(BYTE* reg, BYTE val, bool immediate) {
 	BYTE old = *reg;
-	BYTE anding = 0;
+	BYTE xoring = 0;
 
 	if (immediate)
 	{
 		BYTE n = RAM->read_mem(PC);
 		PC++;
-		anding = n;
+		xoring = n;
 	}
 	else {
-		anding = val;
+		xoring = val;
 	}
 
-	*reg |= anding;
+	*reg ^= xoring;
 
 	reg_AF.lo = 0;
 
@@ -827,12 +919,17 @@ void CPU::INC_N(BYTE* reg) {
 	if (*reg == 0) {
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_Z);
 	}
+	else {
+		reg_AF.lo = BIT_CLEAR(reg_AF.lo, FLAG_Z);
+	}
 
 	WORD htest = (old & 0xF);
 	htest += 0x1;
 
 	if (htest > 0x7)
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_H);
+	else
+		reg_AF.lo = BIT_CLEAR(reg_AF.lo, FLAG_H);
 }
 
 void CPU::DEC_N(BYTE* reg) {
@@ -845,12 +942,17 @@ void CPU::DEC_N(BYTE* reg) {
 	if (*reg == 0) {
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_Z);
 	}
+	else {
+		reg_AF.lo = BIT_CLEAR(reg_AF.lo, FLAG_Z);
+	}
 
 	WORD htest = (old & 0xF);
 	htest -= 0x1;
 
 	if (htest > 0xF)
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_H);
+	else
+		reg_AF.lo = BIT_CLEAR(reg_AF.lo, FLAG_H);
 }
 
 /** 16 bit arithmetic **/
@@ -1088,4 +1190,123 @@ void CPU::SET_HELPER(BYTE opcode) {
 
 void CPU::SET_B_R(BYTE* reg, unsigned int index) {
 	BIT_SET(*reg, index);
+}
+
+void CPU::JP_CC(bool nz, bool z, bool nc, bool c) {
+	if (nz) {
+		if (!BIT_CHECK(reg_AF.lo, FLAG_Z))
+			PC = ((RAM->read_mem(PC + 1) << 8) | RAM->read_mem(PC));
+	} else if (z) {
+		if (BIT_CHECK(reg_AF.lo, FLAG_Z))
+			PC = ((RAM->read_mem(PC + 1) << 8) | RAM->read_mem(PC));
+	} else if (nc) {
+		if (!BIT_CHECK(reg_AF.lo, FLAG_C))
+			PC = ((RAM->read_mem(PC + 1) << 8) | RAM->read_mem(PC));
+	} else if (c) {
+		if (BIT_CHECK(reg_AF.lo, FLAG_C))
+			PC = ((RAM->read_mem(PC + 1) << 8) | RAM->read_mem(PC));
+	}
+}
+
+void CPU::JR_CC(bool nz, bool z, bool nc, bool c) {
+	BYTE add = RAM->read_mem(PC);
+	if (nz) {
+		if (!BIT_CHECK(reg_AF.lo, FLAG_Z)) {
+			if (add < 0x80)
+				PC += add;
+			else
+				PC -= (BYTE)(0xFF - add);
+		}
+		else {
+			PC++;
+		}
+	}
+	else if (z) {
+		if (BIT_CHECK(reg_AF.lo, FLAG_Z)) {
+			if (add < 0x7F)
+				PC += add;
+			else
+				PC -= (BYTE)(0xFF - add);
+		}
+		else {
+			PC++;
+		}
+	}
+	else if (nc) {
+		if (!BIT_CHECK(reg_AF.lo, FLAG_C)) {
+			if (add < 0x7F)
+				PC += add;
+			else
+				PC -= (BYTE)(0xFF - add);
+		}
+		else {
+			PC++;
+		}
+	}
+	else if (c) {
+		if (BIT_CHECK(reg_AF.lo, FLAG_C)) {
+			if (add < 0x7F)
+				PC += add;
+			else
+				PC -= (BYTE)(0xFF - add);
+		}
+		else {
+			PC++;
+		}
+	}
+}
+
+void CPU::CALL() {
+	WORD immediate = ((RAM->read_mem(PC + 1) << 8) | RAM->read_mem(PC));
+	PUSH_NN(PC + 2);
+	PC = immediate;
+}
+
+void CPU::CALL_CC(bool nz, bool z, bool nc, bool c) {
+	if (nz) {
+		if (!BIT_CHECK(reg_AF.lo, FLAG_Z))
+			CALL();
+	}
+	else if (z) {
+		if (BIT_CHECK(reg_AF.lo, FLAG_Z))
+			CALL();
+	}
+	else if (nc) {
+		if (!BIT_CHECK(reg_AF.lo, FLAG_C))
+			CALL();
+	}
+	else if (c) {
+		if (BIT_CHECK(reg_AF.lo, FLAG_C))
+			CALL();
+	}
+}
+
+void CPU::RST(BYTE immediate) {
+	PUSH_NN(PC);
+	PC = immediate;
+}
+
+void CPU::RET_CC(bool nz, bool z, bool nc, bool c) {
+	if (nz) {
+		if (!BIT_CHECK(reg_AF.lo, FLAG_Z))
+			RET();
+	}
+	else if (z) {
+		if (BIT_CHECK(reg_AF.lo, FLAG_Z))
+			RET();
+	}
+	else if (nc) {
+		if (!BIT_CHECK(reg_AF.lo, FLAG_C))
+			RET();
+	}
+	else if (c) {
+		if (BIT_CHECK(reg_AF.lo, FLAG_C))
+			RET();
+	}
+}
+
+void CPU::RET() {
+	WORD new_addr;
+	POP_NN(&new_addr);
+	PC = new_addr;
 }
