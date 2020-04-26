@@ -22,6 +22,7 @@ unsigned int CPU::execute_opcode() {
 
 	opcode = RAM->read_mem(PC);
 	PC++;
+	//printf("-----------------------\n%20X\n", opcode);
 	switch (opcode) {
 
 	// LD nn,n
@@ -111,7 +112,7 @@ unsigned int CPU::execute_opcode() {
 	/** LD A, n **/
 	case 0x0A: LOAD_8BIT_FROM_MEM(&reg_AF.hi, reg_BC.val, 0x0); break;
 	case 0x1A: LOAD_8BIT_FROM_MEM(&reg_AF.hi, reg_DE.val, 0x0); break;
-	case 0xFA: LOAD_8BIT(&reg_AF.hi); break;
+	case 0xFA: LOAD_8BIT_FROM_MEM(&reg_AF.hi, (RAM->read_mem(PC + 1) << 8 | RAM->read_mem(PC)), 0x0); break;
 	case 0x3E: LOAD_8BIT(&reg_AF.hi); break;
 
 
@@ -411,6 +412,7 @@ unsigned int CPU::execute_opcode() {
 	/** RETI **/
 	case 0xD9: RET(); break;
 	}
+	//print_state();
 	return opcode_cycles[opcode];
 }
 
@@ -608,6 +610,7 @@ unsigned int CPU::execute_next_opcode() {
 		break;
 	}
 	}
+	//print_state();
 	return opcode_cycles_cb[opcode];
 }
 /** 8 bit load **/
@@ -632,7 +635,7 @@ void CPU::LOAD_8BIT(BYTE* reg) {
 }
 
 void CPU::LOAD_8BIT_IMMEDIATE(BYTE* reg) {
-	*reg = RAM->read_mem((RAM->read_mem(PC + 1) << 8) | RAM->read_mem(PC));
+	RAM->write_mem((RAM->read_mem(PC + 1) << 8) | RAM->read_mem(PC), *reg);
 	PC += 2;
 }
 
@@ -668,12 +671,12 @@ void CPU::LDI_HL_A() {
 	reg_HL.val++;
 }
 
-void CPU::LDH_A_N() {
+void CPU::LDH_N_A() {
 	RAM->write_mem(0xFF00 + RAM->read_mem(PC), reg_AF.hi);
 	PC += 1;
 }
 
-void CPU::LDH_N_A() {
+void CPU::LDH_A_N() {
 	reg_AF.hi = RAM->read_mem(0xFF00 + RAM->read_mem(PC));
 	PC += 1;
 }
@@ -1213,7 +1216,7 @@ void CPU::JR_CC(bool nz, bool z, bool nc, bool c) {
 	if (nz) {
 		if (!BIT_CHECK(reg_AF.lo, FLAG_Z)) {
 			if (add < 0x80)
-				PC += add;
+				PC += add + 1;
 			else
 				PC -= (BYTE)(0xFF - add);
 		}
@@ -1224,7 +1227,7 @@ void CPU::JR_CC(bool nz, bool z, bool nc, bool c) {
 	else if (z) {
 		if (BIT_CHECK(reg_AF.lo, FLAG_Z)) {
 			if (add < 0x7F)
-				PC += add;
+				PC += add + 1;
 			else
 				PC -= (BYTE)(0xFF - add);
 		}
@@ -1235,7 +1238,7 @@ void CPU::JR_CC(bool nz, bool z, bool nc, bool c) {
 	else if (nc) {
 		if (!BIT_CHECK(reg_AF.lo, FLAG_C)) {
 			if (add < 0x7F)
-				PC += add;
+				PC += add + 1;
 			else
 				PC -= (BYTE)(0xFF - add);
 		}
@@ -1246,7 +1249,7 @@ void CPU::JR_CC(bool nz, bool z, bool nc, bool c) {
 	else if (c) {
 		if (BIT_CHECK(reg_AF.lo, FLAG_C)) {
 			if (add < 0x7F)
-				PC += add;
+				PC += add + 1;
 			else
 				PC -= (BYTE)(0xFF - add);
 		}
