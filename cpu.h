@@ -1,4 +1,5 @@
 #include "constants.h"
+#include "stdio.h"
 
 #define FLAG_Z 7
 #define FLAG_N 6
@@ -68,12 +69,14 @@ private:
     WORD PC;
     Register SP;
     Memory* RAM;
+    FILE* trace;
 
     void print_state();
     void LOAD_8BIT(BYTE* reg);
     void LOAD_16BIT(Register* reg);
     void LOAD_8BIT_REG(BYTE* r1, BYTE* r2);
     void LOAD_8BIT_FROM_MEM(BYTE* reg, WORD addr, WORD immediate);
+    void LOAD_8BIT_FROM_MEM_IMMEDIATE(BYTE* reg);
     void LOAD_8BIT_INTO_MEM(WORD addr, BYTE* reg, WORD immediate);
     void LOAD_16BIT_TO_MEM(Register* reg_16, BYTE* reg);
     void LOAD_8BIT_IMMEDIATE(BYTE* reg);
