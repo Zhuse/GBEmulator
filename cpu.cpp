@@ -1,6 +1,7 @@
 #include "cpu.h"
 #include "memory.h"
 #include "iostream"
+
 CPU::CPU(Memory* RAM_ptr) {
 	init();
 	RAM = RAM_ptr;
@@ -23,7 +24,6 @@ unsigned int CPU::execute_opcode() {
 
 	opcode = RAM->read_mem(PC);
 	PC++;
-	fprintf(trace, "-----------------------\n%20X\n", opcode);
 	switch (opcode) {
 
 	// LD nn,n
@@ -417,7 +417,7 @@ unsigned int CPU::execute_opcode() {
 	/** RETI **/
 	case 0xD9: RET(); break;
 	}
-	print_state();
+	//print_state();
 	return opcode_cycles[opcode];
 }
 

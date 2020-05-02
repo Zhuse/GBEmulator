@@ -5,7 +5,7 @@ class CPU;
 class Emulator
 {
 private:
-    const unsigned int MAX_CYCLES = 69905;
+    const unsigned int MAX_CYCLES = 17476;
     Memory* mem;
     CPU* cpu;
     BYTE screen[160][144][3];
