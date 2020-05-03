@@ -1,5 +1,6 @@
 #include "memory.h"
 #include "iostream"
+
 Memory::Memory(BYTE* cartridge_ptr) {
     cartridge = cartridge_ptr;
     init();
@@ -68,12 +69,43 @@ void Memory::write_mem(WORD addr, BYTE data) {
         return;
     }
 
+    else if (addr == TMC)
+    {
+        return;
+    }
+    else if (addr == 0xFF04) 
+    {
+        RAM[addr] = 0;
+    }
     else
     {
         RAM[addr] = data;
     }
 }
 
+BYTE Memory::write_mem_timer(BYTE data) {
+    RAM[TMC] = data;
+    BYTE new_freq = read_mem(TMC);
+
+    return map_timer_counter(new_freq);
+}
+
+BYTE Memory::map_timer_counter(BYTE freq) {
+    switch (freq)
+    {
+        case 0x00: return 1024;
+        case 0x01: return 16;
+        case 0x10: return 64;
+        case 0x11: return 256;
+    }
+}
+
+void Memory::inc_divider_register() {
+    RAM[0xFF04]++;
+}
+BYTE Memory::get_clk_freq() const {
+    return read_mem(TMC) & 0x11;
+}
 // read memory should never modify member variables hence const
 BYTE Memory::read_mem(WORD addr) const
 {
