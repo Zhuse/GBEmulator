@@ -70,7 +70,17 @@ private:
     Register SP;
     Memory* RAM;
     FILE* trace;
+    bool master_interrupt;
+    bool pending_activation;
+    bool pending_deactivation;
+    bool halted;
+    void req_interrupt(int idx);
+    void serve_interrupt(int idx);
+    void check_ie_activation();
+    void check_ie_deactivation();
 
+    unsigned int execute_opcode();
+    unsigned int execute_next_opcode();
     void print_state();
     void LOAD_8BIT(BYTE* reg);
     void LOAD_16BIT(Register* reg);
@@ -135,6 +145,6 @@ private:
 public: 
     CPU(Memory* RAM_ptr);
     void init();
-    unsigned int execute_opcode();
-    unsigned int execute_next_opcode();
+    unsigned int exec();
+    void serve_interrupts();
 };

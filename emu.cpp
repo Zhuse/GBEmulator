@@ -12,12 +12,16 @@ void Emulator::tick() {
 	unsigned int cycles = 0;
 	while (cycles < MAX_CYCLES) {
 		// Execute opcode and add cycles of opcode to counter
-		cycles += cpu->execute_opcode();
+		cycles += cpu->exec();
 
 		// Update timers
 		update_timers(cycles);
+
 		// Update graphics
+
 		// Perform interrupts
+		cpu->serve_interrupts();
+
 	}
 	// Render frame
 }
@@ -68,3 +72,4 @@ void Emulator::set_clk_freq() {
 bool Emulator::clock_enabled() {
 	return BIT_CHECK(mem->read_mem(TMC), 2);
 }
+

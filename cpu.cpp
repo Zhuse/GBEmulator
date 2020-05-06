@@ -15,7 +15,70 @@ void CPU::init() {
 	reg_DE.val = 0x00D8;
 	reg_HL.val = 0x014D;
 	SP.val = 0xFFFE;
+}	
+
+unsigned int CPU::exec() {
+	check_ie_activation();
+	check_ie_deactivation();
+	return execute_opcode();
 }
+
+void CPU::check_ie_activation() {
+	if (pending_activation) {
+		pending_activation = false;
+		RAM->write_mem(IE, 0x17);
+	}
+}
+
+void CPU::check_ie_deactivation() {
+	if (pending_deactivation) {
+		pending_deactivation = false;
+		RAM->write_mem(IE, 0x0);
+	}
+}
+
+void CPU::serve_interrupt(int idx) {
+	BYTE req = RAM->read_mem(IF);
+	BIT_CLEAR(req, idx);
+	RAM->write_mem(IF, req);
+	master_interrupt = false;
+
+	PUSH_NN(PC);
+
+	switch (idx)
+	{
+	case 0: PC = 0x40; break;
+	case 1: PC = 0x48; break;
+	case 2: PC = 0x50; break;
+	case 4: PC = 0x60; break;
+	}
+}
+
+void CPU::req_interrupt(int idx)
+{
+	BYTE req = RAM->read_mem(IF);
+	BIT_SET(req, idx);
+	RAM->write_mem(IF, req);
+}
+
+void CPU::serve_interrupts() {
+	BYTE reqs = RAM->read_mem(IF);
+	BYTE ie = RAM->read_mem(IE);
+
+	if (master_interrupt) {
+		for (int i = 0; i < 5; i++) {
+			bool curr = BIT_CHECK(reqs, i);
+			if (curr) {
+				halted = false;
+				PC++;
+				if (BIT_CHECK(reqs, ie)) {
+					serve_interrupt(i);
+				}
+			}
+		}
+	}
+}
+
 
 unsigned int CPU::execute_opcode() {
 	BYTE opcode = 0x0;
@@ -342,8 +405,12 @@ unsigned int CPU::execute_opcode() {
 	case 0x00: break;
 
 	/** STOP/HALT **/
-	case 0x10:
-	case 0x76: PC--;  break;
+	case 0x10: PC--; break;
+	case 0x76: {
+		halted = true; 
+		PC--;
+		break;
+	}
 
 	/** RLCA **/
 	case 0x07: RLC(&reg_AF.hi); break;
@@ -415,7 +482,17 @@ unsigned int CPU::execute_opcode() {
 	case 0xD8: RET_CC(false, false, false, true); break;
 
 	/** RETI **/
-	case 0xD9: RET(); break;
+	case 0xD9: {
+		RET();
+		pending_activation = true;
+		break;
+	}
+
+	/** EI **/
+	case 0xFB: pending_activation = true; break;
+
+	/** DI **/
+	case 0xF3: pending_deactivation = true; break;
 	}
 	//print_state();
 	return opcode_cycles[opcode];
