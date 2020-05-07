@@ -4,6 +4,7 @@ class Memory {
 private:
 	BYTE RAM[0x10000];
 	BYTE* cartridge;
+	void dma_transfer(BYTE data);
 public:
 	Memory(BYTE* cartridge_ptr);
 	void init();

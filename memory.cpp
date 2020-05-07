@@ -77,9 +77,22 @@ void Memory::write_mem(WORD addr, BYTE data) {
     {
         RAM[addr] = 0;
     }
+    else if (addr == CURR_SCANLINE) {
+        RAM[addr] = 0;
+    }
+    else if (addr == DMA_TRANSFER) {
+        dma_transfer(data);
+    }
     else
     {
         RAM[addr] = data;
+    }
+}
+
+void Memory::dma_transfer(BYTE data) {
+    WORD spr_base = data << 8;
+    for (int i = 0; i < 0xA0; i++) {
+        write_mem(OAM_BASE + i, read_mem(spr_base + i));
     }
 }
 

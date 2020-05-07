@@ -74,7 +74,7 @@ private:
     bool pending_activation;
     bool pending_deactivation;
     bool halted;
-    void req_interrupt(int idx);
+
     void serve_interrupt(int idx);
     void check_ie_activation();
     void check_ie_deactivation();
@@ -147,4 +147,5 @@ public:
     void init();
     unsigned int exec();
     void serve_interrupts();
+    void req_interrupt(int idx);
 };
