@@ -101,6 +101,124 @@ void Emulator::draw(int cycles) {
 	}
 }
 
+void Emulator::draw_scanline() {
+	BYTE lcd_status_reg = mem->read_mem(LCD_STATUS_REG);
+	bool background_status = BIT_CHECK(lcd_status_reg, 0);
+	bool window_status = BIT_CHECK(lcd_status_reg, 5);
+	bool sprite_status = BIT_CHECK(lcd_status_reg, 1);
+	// Draw background
+	// Draw window
+	// Draw sprites
+	if (background_status) {
+		draw_bg(lcd_status_reg);
+	}
+	if (window_status) {
+		draw_window();
+	}
+	if (sprite_status) {
+		draw_sprites();
+	}
+}
+
+void Emulator::draw_sprites() {
+
+}
+
+void Emulator::draw_bg(BYTE lcd_status_reg) {
+	BYTE scroll_x = mem->read_mem(SCROLL_X);
+	BYTE scroll_y = mem->read_mem(SCROLL_Y);
+	bool map_select = BIT_CHECK(lcd_status_reg, 3);
+	bool unsigned_select;
+	WORD tile_map_base = map_select ? TILE_MAP_2_BASE : TILE_MAP_1_BASE;
+	BYTE current_tile = 0x0;
+	BYTE curr_scanline = mem->read_mem(CURR_SCANLINE);
+	BYTE tile_y = curr_scanline + scroll_y;
+	WORD tile_row = (tile_y / 8);
+	WORD tile_data_base;
+
+	if (BIT_CHECK(lcd_status_reg, 4)) {
+		tile_data_base = TILE_DATA_1_BASE;
+		unsigned_select = true;
+	}
+	else {
+		tile_data_base = TILE_DATA_2_BASE;
+		unsigned_select = false;
+	}
+
+	for (int pxl = 0; pxl < SCREEN_W; pxl++) {
+		BYTE tile_x = pxl + scroll_x;
+		WORD tile_col = tile_x / 8;
+		BYTE tile_addr = (tile_row * 32) + tile_col;
+
+		WORD tile_num = mem->read_mem(tile_map_base + tile_addr);
+		
+		WORD tile_loc = tile_data_base;
+
+		if (unsigned_select) {
+			tile_loc += tile_num * 16;
+		}
+		else {
+			if (tile_num >= 0x80){
+				tile_loc -= (tile_num) * 16;
+			}
+			else {
+				tile_loc += (tile_num * 16);
+			}
+		}
+
+		BYTE tile_line = tile_y % 8;
+
+		BYTE tile_data1 = mem->read_mem(tile_data_base + tile_line * 2);
+		BYTE tile_data2 = mem->read_mem(tile_data_base + (tile_line * 2) + 1);
+
+		BYTE pixel_idx = tile_x % 8;
+		BYTE pixel_colourcode = (BIT_CHECK(tile_data2, pixel_idx) << 1 | BIT_CHECK(tile_data1, pixel_idx));
+	}
+}
+
+void Emulator::assign_colour(BYTE x, BYTE y, BYTE code) {
+	BYTE r = 0;
+	BYTE g = 0;
+	BYTE b = 0;
+	switch (code) {
+	case 0x00: {
+		r = 0;
+		g = 0;
+		b = 0;
+		break;
+	}
+	case 0x01: {
+		r = 0x60;
+		g = 0x60;
+		b = 0x60;
+		break;
+	}
+	case 0x10: {
+		r = 0xB0;
+		g = 0xB0;
+		b = 0xB0;
+		break;
+	}
+	case 0x11: {
+		r = 0xFF;
+		g = 0xFF;
+		b = 0xFF;
+		break;
+	}
+	default: {
+		r = 0;
+		g = 0;
+		b = 0;
+	}
+	}
+	screen[x][y][0] = r;
+	screen[x][y][1] = g;
+	screen[x][y][2] = b;
+}
+void Emulator::draw_window() {
+
+}
+
 void Emulator::set_lcd_status() {
 	bool lcd_enabled = BIT_CHECK(mem->read_mem(LCD_CONTROL_REG), 7);
 	BYTE curr_scanline = mem->read_mem(CURR_SCANLINE);
