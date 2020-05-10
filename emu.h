@@ -18,7 +18,7 @@ private:
     void set_clk_freq();
     void draw(int cycles);
     void draw_scanline();
-    void draw_bg(BYTE lcd_status_reg);
+    void draw_tiles(BYTE lcd_status_reg, bool window);
     void assign_colour(BYTE x, BYTE y, BYTE code);
     void draw_window();
     void draw_sprites();

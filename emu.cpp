@@ -18,6 +18,7 @@ void Emulator::tick() {
 		update_timers(cycles);
 
 		// Update graphics
+		draw(cycles);
 
 		// Perform interrupts
 		cpu->serve_interrupts();
@@ -95,7 +96,7 @@ void Emulator::draw(int cycles) {
 			mem->write_mem(CURR_SCANLINE, 0);
 		}
 		else {
-			// draw line
+			draw_scanline();
 		}
 		scanline_counter = 0;
 	}
@@ -106,14 +107,12 @@ void Emulator::draw_scanline() {
 	bool background_status = BIT_CHECK(lcd_status_reg, 0);
 	bool window_status = BIT_CHECK(lcd_status_reg, 5);
 	bool sprite_status = BIT_CHECK(lcd_status_reg, 1);
-	// Draw background
-	// Draw window
-	// Draw sprites
+
 	if (background_status) {
-		draw_bg(lcd_status_reg);
+		draw_tiles(lcd_status_reg, false);
 	}
 	if (window_status) {
-		draw_window();
+		draw_tiles(lcd_status_reg, true);
 	}
 	if (sprite_status) {
 		draw_sprites();
@@ -121,20 +120,55 @@ void Emulator::draw_scanline() {
 }
 
 void Emulator::draw_sprites() {
+	BYTE curr_scanline = mem->read_mem(CURR_SCANLINE);
+	for (int spr = 0; spr < 40; spr++) {
+		WORD spr_attr_addr = OAM_BASE + spr * 4;
+		BYTE spr_y = mem->read_mem(spr_attr_addr) + 16;
+		BYTE spr_x = mem->read_mem(spr_attr_addr + 1) + 8;
+		BYTE spr_num = mem->read_mem(spr_attr_addr + 2);
+		BYTE spr_attr = mem->read_mem(spr_attr_addr + 3);
 
+		if (curr_scanline >= spr_y && curr_scanline <= spr_y + 16) {
+			BYTE flip_x = BIT_CHECK(spr_attr, 5);
+			BYTE flip_y = BIT_CHECK(spr_attr, 6);
+			BYTE line_idx = flip_y? 0x7 - (curr_scanline - spr_y): curr_scanline - spr_y;
+			BYTE spr_data_addr = TILE_DATA_1_BASE + (spr * SPRITE_SIZE_BYTES) + line_idx * 2;
+			BYTE spr_data1 = mem->read_mem(spr_data_addr);
+			BYTE spr_data2 = mem->read_mem(spr_data_addr + 1);
+
+			for (int x = 0; x < 7; x++) {
+				BYTE spr_pixel_idx;
+				if (flip_x) {
+					spr_pixel_idx = 7 - x;
+				}
+				else {
+					spr_pixel_idx = x;
+				}
+				BYTE pixel_idx = (spr_x + pixel_idx) % 8;
+				BYTE pixel_colourcode = (BIT_CHECK(spr_data2, pixel_idx) << 1 | BIT_CHECK(spr_data1, pixel_idx));
+				assign_colour(spr_x + pixel_idx, curr_scanline, pixel_colourcode);
+			}
+		}
+	}
 }
 
-void Emulator::draw_bg(BYTE lcd_status_reg) {
+void Emulator::draw_tiles(BYTE lcd_status_reg, bool window) {
+	bool map_select = window ? BIT_CHECK(lcd_status_reg, 6) : BIT_CHECK(lcd_status_reg, 3);
+	bool unsigned_select;
 	BYTE scroll_x = mem->read_mem(SCROLL_X);
 	BYTE scroll_y = mem->read_mem(SCROLL_Y);
-	bool map_select = BIT_CHECK(lcd_status_reg, 3);
-	bool unsigned_select;
+	BYTE window_x = mem->read_mem(WINDOW_X) - 7;
+	BYTE window_y = mem->read_mem(WINDOW_Y);
 	WORD tile_map_base = map_select ? TILE_MAP_2_BASE : TILE_MAP_1_BASE;
 	BYTE current_tile = 0x0;
 	BYTE curr_scanline = mem->read_mem(CURR_SCANLINE);
-	BYTE tile_y = curr_scanline + scroll_y;
+	BYTE tile_y = window? curr_scanline - window_y : curr_scanline + scroll_y;
 	WORD tile_row = (tile_y / 8);
 	WORD tile_data_base;
+
+	if (window_y < curr_scanline) {
+		return;
+	}
 
 	if (BIT_CHECK(lcd_status_reg, 4)) {
 		tile_data_base = TILE_DATA_1_BASE;
@@ -145,8 +179,16 @@ void Emulator::draw_bg(BYTE lcd_status_reg) {
 		unsigned_select = false;
 	}
 
-	for (int pxl = 0; pxl < SCREEN_W; pxl++) {
-		BYTE tile_x = pxl + scroll_x;
+	for (int pxl = window? window_x : 0; pxl < SCREEN_W; pxl++) {
+		BYTE tile_x;
+
+		if (window) {
+			tile_x = window_x - pxl;
+		}
+		else {
+			tile_x = pxl + scroll_x;
+		}
+
 		WORD tile_col = tile_x / 8;
 		BYTE tile_addr = (tile_row * 32) + tile_col;
 
@@ -173,6 +215,7 @@ void Emulator::draw_bg(BYTE lcd_status_reg) {
 
 		BYTE pixel_idx = tile_x % 8;
 		BYTE pixel_colourcode = (BIT_CHECK(tile_data2, pixel_idx) << 1 | BIT_CHECK(tile_data1, pixel_idx));
+		assign_colour(pxl, curr_scanline, pixel_colourcode);
 	}
 }
 
@@ -215,9 +258,7 @@ void Emulator::assign_colour(BYTE x, BYTE y, BYTE code) {
 	screen[x][y][1] = g;
 	screen[x][y][2] = b;
 }
-void Emulator::draw_window() {
 
-}
 
 void Emulator::set_lcd_status() {
 	bool lcd_enabled = BIT_CHECK(mem->read_mem(LCD_CONTROL_REG), 7);
