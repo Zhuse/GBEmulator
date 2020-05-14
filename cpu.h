@@ -73,7 +73,7 @@ private:
     bool master_interrupt;
     bool pending_activation;
     bool pending_deactivation;
-    bool halted;
+    bool halted = false;
 
     void serve_interrupt(int idx);
     void check_ie_activation();

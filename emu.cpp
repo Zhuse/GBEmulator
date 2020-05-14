@@ -3,16 +3,18 @@
 #include "cpu.h"
 #include "iostream"
 #include "fstream"
+
 Emulator::Emulator() {
 	load_cartridge();
 	mem = new Memory(cartridge_mem);
 	cpu = new CPU(mem);
 }
 void Emulator::tick() {
-	unsigned int cycles = 0;
-	while (cycles < MAX_CYCLES) {
+	unsigned int tick_cycles = 0;
+	while (tick_cycles < MAX_CYCLES) {
 		// Execute opcode and add cycles of opcode to counter
-		cycles += cpu->exec();
+		BYTE cycles = cpu->exec();
+		tick_cycles += cycles;
 
 		// Update timers
 		update_timers(cycles);
@@ -85,9 +87,8 @@ void Emulator::draw(int cycles) {
 	}
 	if (scanline_counter >= CYCLES_PER_SCANLINE) {
 		BYTE curr_line = mem->read_mem(CURR_SCANLINE);
-		curr_line++;
-		mem->write_mem(CURR_SCANLINE, curr_line);
-
+		mem->inc_scanline_register();
+		scanline_counter = 0;
 		// V-blank interrupt
 		if (curr_line == SCREEN_H) {
 			cpu->req_interrupt(0);
@@ -98,7 +99,6 @@ void Emulator::draw(int cycles) {
 		else {
 			draw_scanline();
 		}
-		scanline_counter = 0;
 	}
 }
 
@@ -144,7 +144,7 @@ void Emulator::draw_sprites() {
 				else {
 					spr_pixel_idx = x;
 				}
-				BYTE pixel_idx = (spr_x + pixel_idx) % 8;
+				BYTE pixel_idx = (spr_x + spr_pixel_idx) % 8;
 				BYTE pixel_colourcode = (BIT_CHECK(spr_data2, pixel_idx) << 1 | BIT_CHECK(spr_data1, pixel_idx));
 				assign_colour(spr_x + pixel_idx, curr_scanline, pixel_colourcode);
 			}
@@ -254,9 +254,9 @@ void Emulator::assign_colour(BYTE x, BYTE y, BYTE code) {
 		b = 0;
 	}
 	}
-	screen[x][y][0] = r;
-	screen[x][y][1] = g;
-	screen[x][y][2] = b;
+	screen[y][x][0] = r;
+	screen[y][x][1] = g;
+	screen[y][x][2] = b;
 }
 
 
@@ -276,8 +276,8 @@ void Emulator::set_lcd_status() {
 			new_mode = V_BLANK_MODE;
 		}
 		else {
-			BYTE sprite_search_bounds = 80;
-			BYTE data_transfer_bounds = sprite_search_bounds + 172;
+			BYTE sprite_search_bounds = 20;
+			BYTE data_transfer_bounds = sprite_search_bounds + 43;
 			if (scanline_counter <= sprite_search_bounds) {
 				new_mode = SPRITE_SEARCH_MODE;
 			} else if (scanline_counter <= data_transfer_bounds) {

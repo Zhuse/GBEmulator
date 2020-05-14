@@ -38,3 +38,10 @@ Debug/
 
 # Trace
 trace.txt
+
+# Libraries
+include/
+lib/
+packages/
+
+packages.config

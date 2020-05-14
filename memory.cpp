@@ -10,7 +10,7 @@ void Memory::init() {
     for (int i = 0; i < 0xFFFF; i++) {
         RAM[i] = 0x0;
     }
-    for (int i = 0x100; i < 32768; i++) {
+    for (int i = 0x0; i < 0x8000; i++) {
         RAM[i] = cartridge[i];
     }
     RAM[0xFF05] = 0x00;
@@ -116,6 +116,11 @@ BYTE Memory::map_timer_counter(BYTE freq) {
 void Memory::inc_divider_register() {
     RAM[0xFF04]++;
 }
+
+void Memory::inc_scanline_register() {
+    RAM[0xFF44]++;
+}
+
 BYTE Memory::get_clk_freq() const {
     return read_mem(TMC) & 0x11;
 }
