@@ -34,7 +34,7 @@ void Emulator::load_cartridge() {
 	memset(cartridge_mem, 0, sizeof(cartridge_mem));
 
 	FILE* f;
-	f = fopen("test7.gb", "rb");
+	f = fopen("test8.gb", "rb");
 	if (f == NULL) {
 		printf("Error opening ROM\n");
 	}

@@ -174,7 +174,12 @@ unsigned int CPU::execute_opcode() {
 	case 0x73: LOAD_16BIT_TO_MEM(&reg_HL, &reg_DE.lo); break;
 	case 0x74: LOAD_16BIT_TO_MEM(&reg_HL, &reg_HL.hi); break;
 	case 0x75: LOAD_16BIT_TO_MEM(&reg_HL, &reg_HL.lo); break;
-	case 0x36: LOAD_16BIT(&reg_HL); break;
+	case 0x36: {
+		BYTE data = RAM->read_mem(PC);
+		LOAD_16BIT_TO_MEM(&reg_HL, &data);
+		PC++;
+		break;
+	}
 
 
 	/** LD A, n **/
@@ -839,15 +844,16 @@ void CPU::POP_NN(WORD* reg) {
 /** 8-bit arithmetic **/
 void CPU::ADD_N_N(BYTE* reg, BYTE val, bool immediate, bool carry) {
 	int result = (int)*reg;
+	int adding = 0;
 	if (immediate)
 	{
 		BYTE n = RAM->read_mem(PC);
 		PC++;
-		result += n;
+		adding = n;
 	}
 	else
 	{
-		result += val;
+		adding = val;
 	}
 
 	if (carry)
@@ -856,9 +862,10 @@ void CPU::ADD_N_N(BYTE* reg, BYTE val, bool immediate, bool carry) {
 			result++;
 	}
 
+	result += adding;
 	reg_AF.lo = 0;
 
-	int no_carry_sum = *reg ^ val;
+	int no_carry_sum = *reg ^ adding;
 	int carry_info = result ^ no_carry_sum;
 
 	if ((carry_info & 0x10) == 0x10)
@@ -876,15 +883,16 @@ void CPU::ADD_N_N(BYTE* reg, BYTE val, bool immediate, bool carry) {
 
 void CPU::SUB_N_N(BYTE* reg, BYTE val, bool immediate, bool borrow) {
 	int result = (int)*reg;
+	int subbing = 0;
 	if (immediate)
 	{
 		BYTE n = RAM->read_mem(PC);
 		PC++;
-		result -= n;
+		subbing = n;
 	}
 	else
 	{
-		result -= val;
+		subbing = val;
 	}
 
 	if (borrow)
@@ -896,7 +904,8 @@ void CPU::SUB_N_N(BYTE* reg, BYTE val, bool immediate, bool borrow) {
 	reg_AF.lo = 0;
 	reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_N);
 
-	int no_borrow_dif = *reg ^ val;
+	result -= subbing;
+	int no_borrow_dif = *reg ^ subbing;
 	int carry_info = result ^ no_borrow_dif;
 
 	if ((carry_info & 0x10) == 0x10)
