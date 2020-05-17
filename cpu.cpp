@@ -420,13 +420,13 @@ unsigned int CPU::execute_opcode() {
 	}
 
 	/** RLCA **/
-	case 0x07: RLC(&reg_AF.hi); break;
+	case 0x07: RLC(&reg_AF.hi, true); break;
 	
 	/** RLA **/
 	case 0x17: RL(&reg_AF.hi); break;
 	
 	/** RRCA **/
-	case 0x0F: RRC(&reg_AF.hi); break;
+	case 0x0F: RRC(&reg_AF.hi, true); break;
 
 	/** RRA **/
 	case 0x1F: RR(&reg_AF.hi); break;
@@ -490,8 +490,8 @@ unsigned int CPU::execute_opcode() {
 
 	/** RETI **/
 	case 0xD9: {
-		RET();
 		RAM->write_mem(IE, 0x17);
+		RET();
 		break;
 	}
 
@@ -529,16 +529,16 @@ unsigned int CPU::execute_next_opcode() {
 	}
 
 		/** RLC **/
-	case 0x07: RLC(&reg_AF.hi); break;
-	case 0x00: RLC(&reg_BC.hi); break;
-	case 0x01: RLC(&reg_BC.lo); break;
-	case 0x02: RLC(&reg_DE.hi); break;
-	case 0x03: RLC(&reg_DE.lo); break;
-	case 0x04: RLC(&reg_HL.hi); break;
-	case 0x05: RLC(&reg_HL.lo); break;
+	case 0x07: RLC(&reg_AF.hi, false); break;
+	case 0x00: RLC(&reg_BC.hi, false); break;
+	case 0x01: RLC(&reg_BC.lo, false); break;
+	case 0x02: RLC(&reg_DE.hi, false); break;
+	case 0x03: RLC(&reg_DE.lo, false); break;
+	case 0x04: RLC(&reg_HL.hi, false); break;
+	case 0x05: RLC(&reg_HL.lo, false); break;
 	case 0x06: {
 		BYTE data = RAM->read_mem(reg_HL.val);
-		RLC(&data);
+		RLC(&data, false);
 		RAM->write_mem(reg_HL.val, data);
 		break;
 	}
@@ -559,16 +559,16 @@ unsigned int CPU::execute_next_opcode() {
 	}
 
 		/** RRC **/
-	case 0x0F: RRC(&reg_AF.hi); break;
-	case 0x08: RRC(&reg_BC.hi); break;
-	case 0x09: RRC(&reg_BC.lo); break;
-	case 0x0A: RRC(&reg_DE.hi); break;
-	case 0x0B: RRC(&reg_DE.lo); break;
-	case 0x0C: RRC(&reg_HL.hi); break;
-	case 0x0D: RRC(&reg_HL.lo); break;
+	case 0x0F: RRC(&reg_AF.hi, false); break;
+	case 0x08: RRC(&reg_BC.hi, false); break;
+	case 0x09: RRC(&reg_BC.lo, false); break;
+	case 0x0A: RRC(&reg_DE.hi, false); break;
+	case 0x0B: RRC(&reg_DE.lo, false); break;
+	case 0x0C: RRC(&reg_HL.hi, false); break;
+	case 0x0D: RRC(&reg_HL.lo, false); break;
 	case 0x0E: {
 		BYTE data = RAM->read_mem(reg_HL.val);
-		RRC(&data);
+		RRC(&data, false);
 		RAM->write_mem(reg_HL.val, data);
 		break;
 	}
@@ -838,38 +838,36 @@ void CPU::POP_NN(WORD* reg) {
 
 /** 8-bit arithmetic **/
 void CPU::ADD_N_N(BYTE* reg, BYTE val, bool immediate, bool carry) {
-	BYTE old = *reg;
-	int adding = 0;
+	int result = (int)*reg;
 	if (immediate)
 	{
 		BYTE n = RAM->read_mem(PC);
 		PC++;
-		adding = n;
+		result += n;
 	}
 	else
 	{
-		adding = val;
+		result += val;
 	}
 
 	if (carry)
 	{
 		if (BIT_CHECK(reg_AF.lo, FLAG_C))
-			adding++;
+			result++;
 	}
 
 	reg_AF.lo = 0;
 
+	int no_carry_sum = *reg ^ val;
+	int carry_info = result ^ no_carry_sum;
 
-	WORD htest = (old & 0xF);
-	htest += (adding & 0xF);
-
-	if (htest > 0xF)
+	if ((carry_info & 0x10) == 0x10)
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_H);
 
-	if ((old + adding) > 0xFF)
+	if ((carry_info & 0x100) == 0x100)
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_C);
 
-	*reg += adding;
+	*reg = (BYTE)result;
 
 	if (*reg == 0) {
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_Z);
@@ -877,44 +875,41 @@ void CPU::ADD_N_N(BYTE* reg, BYTE val, bool immediate, bool carry) {
 }
 
 void CPU::SUB_N_N(BYTE* reg, BYTE val, bool immediate, bool borrow) {
-	BYTE old = *reg;
-	BYTE sub = 0;
-
+	int result = (int)*reg;
 	if (immediate)
 	{
 		BYTE n = RAM->read_mem(PC);
 		PC++;
-		sub = n;
+		result -= n;
 	}
 	else
 	{
-		sub = val;
+		result -= val;
 	}
 
 	if (borrow)
 	{
 		if (BIT_CHECK(reg_AF.lo, FLAG_C))
-			sub++;
+			result--;
 	}
 
-	*reg -= sub;
-
 	reg_AF.lo = 0;
+	reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_N);
+
+	int no_borrow_dif = *reg ^ val;
+	int carry_info = result ^ no_borrow_dif;
+
+	if ((carry_info & 0x10) == 0x10)
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_H);
+
+	if ((carry_info & 0x100) == 0x100)
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_C);
+
+	*reg = (BYTE)result;
 
 	if (*reg == 0) {
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_Z);
 	}
-
-	reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_N);
-
-	if (old < sub)
-		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_C);
-
-	SIGNED_WORD htest = (old & 0xF);
-	htest -= (sub & 0xF);
-
-	if (htest < 0)
-		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_H);
 }
 
 void CPU::AND_N_N(BYTE* reg, BYTE val, bool immediate) {
@@ -1153,20 +1148,26 @@ void CPU::SCF() {
 	BIT_SET(reg_AF.lo, FLAG_C);
 }
 
-void CPU::RLC(BYTE* reg) {
-	BYTE old = *reg;
-	BYTE flag_c = BIT_CHECK(reg_AF.lo, FLAG_C);
-	BIT_CLEAR(reg_AF.lo, FLAG_N);
-	BIT_CLEAR(reg_AF.lo, FLAG_H);
-	if (*reg == 0)
-		BIT_SET(reg_AF.lo, FLAG_Z);
-	
-	if (BIT_CHECK(*reg, 7))
-		BIT_SET(reg_AF.lo, FLAG_C);
-	else
-		BIT_CLEAR(reg_AF.lo, FLAG_C);
+void CPU::RLC(BYTE* reg, bool regA) {
+	BYTE result = *reg;
 
-	*reg = (old << 1) | flag_c;
+	reg_AF.lo = 0;
+	if (BIT_CHECK(*reg, 7)) {
+		BIT_SET(reg_AF.lo, FLAG_C);
+		result = (result << 1) | 0x1;
+	}
+	else {
+		result <<= 1;
+	}
+
+	*reg = result;
+
+	if (!regA) {
+		if (result == 0) {
+			BIT_SET(reg_AF.lo, FLAG_Z);
+		}
+	}
+
 }
 
 void CPU::RL(BYTE* reg) {
@@ -1184,19 +1185,25 @@ void CPU::RL(BYTE* reg) {
 	*reg = (old << 1) | (oldFlag);
 }
 
-void CPU::RRC(BYTE* reg) {
-	BYTE old = *reg;
-	BIT_CLEAR(reg_AF.lo, FLAG_N);
-	BIT_CLEAR(reg_AF.lo, FLAG_H);
-	if (*reg == 0)
-		BIT_SET(reg_AF.lo, FLAG_Z);
+void CPU::RRC(BYTE* reg, bool regA) {
+	BYTE result = *reg;
 
-	if (BIT_CHECK(*reg, 0))
+	reg_AF.lo = 0;
+	if (BIT_CHECK(*reg, 0)) {
 		BIT_SET(reg_AF.lo, FLAG_C);
-	else
-		BIT_CLEAR(reg_AF.lo, FLAG_C);
+		result = (result >> 1) | 0x80;
+	}
+	else {
+		result >>= 1;
+	}
 
-	*reg = (old >> 1) | (old << 7);
+	*reg = result;
+
+	if (!regA) {
+		if (result == 0) {
+			BIT_SET(reg_AF.lo, FLAG_Z);
+		}
+	}
 }
 
 void CPU::RR(BYTE* reg) {

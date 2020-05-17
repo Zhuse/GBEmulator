@@ -123,9 +123,9 @@ private:
     void CPL();
     void CCF();
     void SCF();
-    void RLC(BYTE* reg);
+    void RLC(BYTE* reg, bool regA);
     void RL(BYTE* reg);
-    void RRC(BYTE* reg);
+    void RRC(BYTE* reg, bool regA);
     void RR(BYTE* reg);
     void SLA(BYTE* reg);
     void SRA(BYTE* reg);
