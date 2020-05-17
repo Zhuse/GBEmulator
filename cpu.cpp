@@ -1295,7 +1295,7 @@ void CPU::SRL(BYTE* reg) {
 }
 
 void CPU::BIT_HELPER(BYTE opcode) {
-	BYTE hi_nibble = opcode & 0xF0;
+	BYTE hi_nibble = (opcode & 0xF0) >> 4;
 	BYTE lo_nibble = opcode & 0xF;
 	BYTE* reg = registers[lo_nibble % 8];
 	BYTE index_base = 2*(hi_nibble - 0x4);
@@ -1306,13 +1306,15 @@ void CPU::BIT_HELPER(BYTE opcode) {
 void CPU::BIT_B_R(BYTE* reg, unsigned int index) {
 	if (!BIT_CHECK(*reg, index))
 		BIT_SET(reg_AF.lo, FLAG_Z);
+	else
+		BIT_CLEAR(reg_AF.lo, FLAG_Z);
 
 	BIT_CLEAR(reg_AF.lo, FLAG_N);
 	BIT_SET(reg_AF.lo, FLAG_H);
 }
 
 void CPU::RES_HELPER(BYTE opcode) {
-	BYTE hi_nibble = opcode & 0xF0;
+	BYTE hi_nibble = (opcode & 0xF0) >> 4;
 	BYTE lo_nibble = opcode & 0xF;
 	BYTE* reg = registers[lo_nibble % 8];
 	BYTE index_base = 2 * (hi_nibble - 0x8);
@@ -1325,10 +1327,10 @@ void CPU::RES_B_R(BYTE* reg, unsigned int index) {
 }
 
 void CPU::SET_HELPER(BYTE opcode) {
-	BYTE hi_nibble = opcode & 0xF0;
+	BYTE hi_nibble = (opcode & 0xF0) >> 4;
 	BYTE lo_nibble = opcode & 0xF;
-	BYTE* reg = registers[lo_nibble % 0xC];
-	BYTE index_base = 2 * (hi_nibble - 0x8);
+	BYTE* reg = registers[lo_nibble % 0x8];
+	BYTE index_base = 2 * (hi_nibble - 0xC);
 	BYTE index_add = lo_nibble / (0x8);
 	SET_B_R(reg, index_base + index_add);
 }
