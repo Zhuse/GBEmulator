@@ -89,7 +89,7 @@ unsigned int CPU::execute_opcode() {
 	//Fetch opCode
 
 	opcode = RAM->read_mem(PC);
-	fprintf(trace, "\n============================\nPC: %02X,     OPCODE: %02X \n", PC, opcode);
+	// fprintf(trace, "\n============================\nPC: %02X,     OPCODE: %02X \n", PC, opcode);
 	PC++;
 	switch (opcode) {
 
@@ -501,7 +501,9 @@ unsigned int CPU::execute_opcode() {
 	/** DI **/
 	case 0xF3: pending_deactivation = true; break;
 	}
-	print_state();
+	//print_state(opcode);
+	
+	reg_AF.lo &= 0xF0;
 	return opcode_cycles[opcode];
 }
 
@@ -699,12 +701,15 @@ unsigned int CPU::execute_next_opcode() {
 		break;
 	}
 	}
-	//print_state();
+	//print_state(opcode);
+	clear_unused_bits();
 	return opcode_cycles_cb[opcode];
 }
 /** 8 bit load **/
 
-void CPU::print_state() {
+void CPU::print_state(BYTE opcode) {
+	fprintf(trace, "\n===========================================\n");
+	fprintf(trace, "OPCODE: %02X\n", opcode);
 	fprintf(trace, "REG AF: %02X        FF40: %02X\n", reg_AF.val, RAM->read_mem(0xFF40));
 	fprintf(trace, "REG BC: %02X        FF41: %02X\n", reg_BC.val, RAM->read_mem(0xFF41));
 	fprintf(trace, "REG DE: %02X        FF42: %02X\n", reg_DE.val, RAM->read_mem(0xFF42));
@@ -721,6 +726,9 @@ void CPU::print_state() {
 	fprintf(trace, "RAM[DFF9]: %02X, RAM[DFFA]: %02X, RAM[DEF8]: %02X", RAM->read_mem(0xDFF9), RAM->read_mem(0xDFFA), RAM->read_mem(0xDEF8));
 }
 
+void CPU::clear_unused_bits() {
+	reg_AF.lo &= 0xF0;
+}
 void CPU::LOAD_8BIT(BYTE* reg) {
 	*reg = RAM->read_mem(PC);
 	PC += 1;
@@ -831,8 +839,7 @@ void CPU::POP_NN(WORD* reg) {
 /** 8-bit arithmetic **/
 void CPU::ADD_N_N(BYTE* reg, BYTE val, bool immediate, bool carry) {
 	BYTE old = *reg;
-	BYTE adding = 0;
-
+	int adding = 0;
 	if (immediate)
 	{
 		BYTE n = RAM->read_mem(PC);
@@ -850,13 +857,8 @@ void CPU::ADD_N_N(BYTE* reg, BYTE val, bool immediate, bool carry) {
 			adding++;
 	}
 
-	*reg += adding;
-
 	reg_AF.lo = 0;
 
-	if (*reg == 0) {
-		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_Z);
-	}
 
 	WORD htest = (old & 0xF);
 	htest += (adding & 0xF);
@@ -866,6 +868,12 @@ void CPU::ADD_N_N(BYTE* reg, BYTE val, bool immediate, bool carry) {
 
 	if ((old + adding) > 0xFF)
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_C);
+
+	*reg += adding;
+
+	if (*reg == 0) {
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_Z);
+	}
 }
 
 void CPU::SUB_N_N(BYTE* reg, BYTE val, bool immediate, bool borrow) {
@@ -1064,26 +1072,24 @@ void CPU::DEC_N(BYTE* reg) {
 /** 16 bit arithmetic **/
 
 void CPU::ADD_HL(Register* reg) {
-	BYTE old = reg_HL.val;
-
-	reg_HL.val += reg->val;
+	int c_test = reg_HL.val + reg->val;
 
 	BIT_CLEAR(reg_AF.lo, FLAG_N);
+	BIT_CLEAR(reg_AF.lo, FLAG_H);
+	BIT_CLEAR(reg_AF.lo, FLAG_C);
 
-	WORD htest = (old & 0xF);
-	htest += (reg_HL.val & 0xF);
-
-	if (htest > 0x0FFF)
+	if ((reg_HL.val ^ reg->val ^ (c_test & 0xFFFF)) & 0x1000)
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_H);
 
-	if (old  > reg_HL.val)
+	if (c_test >= 0x10000)
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_C);
+
+	reg_HL.val = (WORD)c_test;
 }
 
 void CPU::ADD_SP() {
-	BYTE old = SP.val;
 	BYTE data = RAM->read_mem(PC);
-	BYTE result = SP.val + RAM->read_mem(PC);
+	int result = SP.val + RAM->read_mem(PC);
 
 	reg_AF.lo = 0;
 
@@ -1115,7 +1121,7 @@ void CPU::DAA() {
 	BYTE shift = 0;
 	if (reg_AF.hi == 0x0)
 		BIT_SET(reg_AF.lo, FLAG_Z);
-	if (reg_AF.hi >= 99)
+	if (reg_AF.hi > 99)
 		BIT_SET(reg_AF.lo, FLAG_C);
 	else
 		BIT_CLEAR(reg_AF.lo, FLAG_C);
@@ -1137,6 +1143,8 @@ void CPU::CPL() {
 
 void CPU::CCF() {
 	BIT_FLIP(reg_AF.lo, FLAG_C);
+	BIT_CLEAR(reg_AF.lo, FLAG_H);
+	BIT_CLEAR(reg_AF.lo, FLAG_N);
 }
 
 void CPU::SCF() {
@@ -1147,6 +1155,7 @@ void CPU::SCF() {
 
 void CPU::RLC(BYTE* reg) {
 	BYTE old = *reg;
+	BYTE flag_c = BIT_CHECK(reg_AF.lo, FLAG_C);
 	BIT_CLEAR(reg_AF.lo, FLAG_N);
 	BIT_CLEAR(reg_AF.lo, FLAG_H);
 	if (*reg == 0)
@@ -1157,7 +1166,7 @@ void CPU::RLC(BYTE* reg) {
 	else
 		BIT_CLEAR(reg_AF.lo, FLAG_C);
 
-	*reg = (old << 1) | (old >> 7);
+	*reg = (old << 1) | flag_c;
 }
 
 void CPU::RL(BYTE* reg) {

@@ -81,7 +81,8 @@ private:
 
     unsigned int execute_opcode();
     unsigned int execute_next_opcode();
-    void print_state();
+    void print_state(BYTE opcode);
+    void clear_unused_bits();
     void LOAD_8BIT(BYTE* reg);
     void LOAD_16BIT(Register* reg);
     void LOAD_8BIT_REG(BYTE* r1, BYTE* r2);

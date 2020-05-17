@@ -34,7 +34,7 @@ void Emulator::load_cartridge() {
 	memset(cartridge_mem, 0, sizeof(cartridge_mem));
 
 	FILE* f;
-	f = fopen("test1.gb", "rb");
+	f = fopen("test2.gb", "rb");
 	if (f == NULL) {
 		printf("Error opening ROM\n");
 	}
@@ -78,6 +78,8 @@ bool Emulator::clock_enabled() {
 
 void Emulator::draw(int cycles) {
 	bool lcd_enabled = BIT_CHECK(mem->read_mem(LCD_CONTROL_REG), 7);
+	
+	set_lcd_status();
 
 	if (lcd_enabled) {
 		scanline_counter += cycles;
@@ -87,23 +89,24 @@ void Emulator::draw(int cycles) {
 	}
 	if (scanline_counter >= CYCLES_PER_SCANLINE) {
 		BYTE curr_line = mem->read_mem(CURR_SCANLINE);
-		mem->inc_scanline_register();
 		scanline_counter = 0;
 		// V-blank interrupt
-		if (curr_line == SCREEN_H) {
+		if (curr_line >= SCREEN_H && curr_line < LAST_SCANLINE) {
 			cpu->req_interrupt(0);
 		}
-		else if (curr_line > LAST_SCANLINE) {
+		else if (curr_line >= LAST_SCANLINE) {
 			mem->write_mem(CURR_SCANLINE, 0);
+			return;
 		}
 		else {
 			draw_scanline();
 		}
+		mem->inc_scanline_register();
 	}
 }
 
 void Emulator::draw_scanline() {
-	BYTE lcd_status_reg = mem->read_mem(LCD_STATUS_REG);
+	BYTE lcd_status_reg = mem->read_mem(LCD_CONTROL_REG);
 	bool background_status = BIT_CHECK(lcd_status_reg, 0);
 	bool window_status = BIT_CHECK(lcd_status_reg, 5);
 	bool sprite_status = BIT_CHECK(lcd_status_reg, 1);
@@ -162,11 +165,11 @@ void Emulator::draw_tiles(BYTE lcd_status_reg, bool window) {
 	WORD tile_map_base = map_select ? TILE_MAP_2_BASE : TILE_MAP_1_BASE;
 	BYTE current_tile = 0x0;
 	BYTE curr_scanline = mem->read_mem(CURR_SCANLINE);
-	BYTE tile_y = window? curr_scanline - window_y : curr_scanline + scroll_y;
+	BYTE tile_y = window? (curr_scanline - window_y): (curr_scanline + scroll_y);
 	WORD tile_row = (tile_y / 8);
 	WORD tile_data_base;
 
-	if (window_y < curr_scanline) {
+	if (window & (window_y < curr_scanline)) {
 		return;
 	}
 
@@ -190,7 +193,7 @@ void Emulator::draw_tiles(BYTE lcd_status_reg, bool window) {
 		}
 
 		WORD tile_col = tile_x / 8;
-		BYTE tile_addr = (tile_row * 32) + tile_col;
+		WORD tile_addr = (tile_row * 32) + tile_col;
 
 		WORD tile_num = mem->read_mem(tile_map_base + tile_addr);
 		
@@ -210,11 +213,11 @@ void Emulator::draw_tiles(BYTE lcd_status_reg, bool window) {
 
 		BYTE tile_line = tile_y % 8;
 
-		BYTE tile_data1 = mem->read_mem(tile_data_base + tile_line * 2);
-		BYTE tile_data2 = mem->read_mem(tile_data_base + (tile_line * 2) + 1);
+		BYTE tile_data1 = mem->read_mem(tile_loc + tile_line * 2);
+		BYTE tile_data2 = mem->read_mem(tile_loc + (tile_line * 2) + 1);
 
 		BYTE pixel_idx = tile_x % 8;
-		BYTE pixel_colourcode = (BIT_CHECK(tile_data2, pixel_idx) << 1 | BIT_CHECK(tile_data1, pixel_idx));
+		BYTE pixel_colourcode = (BIT_CHECK(tile_data2, 8 - pixel_idx) << 1 | BIT_CHECK(tile_data1, 8 - pixel_idx));
 		assign_colour(pxl, curr_scanline, pixel_colourcode);
 	}
 }
@@ -224,25 +227,25 @@ void Emulator::assign_colour(BYTE x, BYTE y, BYTE code) {
 	BYTE g = 0;
 	BYTE b = 0;
 	switch (code) {
-	case 0x00: {
+	case 0x0: {
 		r = 0;
 		g = 0;
 		b = 0;
 		break;
 	}
-	case 0x01: {
+	case 0x1: {
 		r = 0x60;
 		g = 0x60;
 		b = 0x60;
 		break;
 	}
-	case 0x10: {
+	case 0x2: {
 		r = 0xB0;
 		g = 0xB0;
 		b = 0xB0;
 		break;
 	}
-	case 0x11: {
+	case 0x3: {
 		r = 0xFF;
 		g = 0xFF;
 		b = 0xFF;
@@ -274,16 +277,24 @@ void Emulator::set_lcd_status() {
 	else {
 		if (curr_scanline >= SCREEN_W) {
 			new_mode = V_BLANK_MODE;
+			status = BIT_CLEAR(status, 1);
+			status = BIT_SET(status, 0);
 		}
 		else {
 			BYTE sprite_search_bounds = 20;
 			BYTE data_transfer_bounds = sprite_search_bounds + 43;
 			if (scanline_counter <= sprite_search_bounds) {
 				new_mode = SPRITE_SEARCH_MODE;
+				status = BIT_SET(status, 1);
+				status = BIT_CLEAR(status, 0);
 			} else if (scanline_counter <= data_transfer_bounds) {
 				new_mode = DATA_TRANSFER_MODE;
+				status = BIT_SET(status, 1);
+				status = BIT_SET(status, 0);
 			} else {
 				new_mode = H_BLANK_MODE;
+				status = BIT_CLEAR(status, 1);
+				status = BIT_CLEAR(status, 0);
 			}
 		}
 	}
@@ -291,4 +302,6 @@ void Emulator::set_lcd_status() {
 	if (new_mode != old_mode) {
 		cpu->req_interrupt(1);
 	}
+
+	mem->write_mem(LCD_STATUS_REG, status);
 }
