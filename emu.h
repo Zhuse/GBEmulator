@@ -11,10 +11,11 @@ private:
     WORD timer_counter = 0;
     WORD divide_counter = 0;
     WORD scanline_counter = 0;
+    WORD timer_limit = 0;
     void update_timers(int cycles);
     void update_divider(int cycles);
     bool clock_enabled();
-    void set_clk_freq();
+    void set_timer_freq();
     void draw(int cycles);
     void draw_scanline();
     void draw_tiles(BYTE lcd_status_reg, bool window);

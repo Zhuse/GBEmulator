@@ -68,11 +68,6 @@ void Memory::write_mem(WORD addr, BYTE data) {
     {
         return;
     }
-
-    else if (addr == TMC)
-    {
-        return;
-    }
     else if (addr == 0xFF04) 
     {
         RAM[addr] = 0;
@@ -106,10 +101,10 @@ BYTE Memory::write_mem_timer(BYTE data) {
 BYTE Memory::map_timer_counter(BYTE freq) {
     switch (freq)
     {
-        case 0x00: return 1024;
-        case 0x01: return 16;
-        case 0x10: return 64;
-        case 0x11: return 256;
+        case 0x00: return 256;
+        case 0x01: return 4;
+        case 0x10: return 16;
+        case 0x11: return 64;
     }
 }
 

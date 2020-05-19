@@ -71,7 +71,7 @@ private:
     Memory* RAM;
     FILE* trace;
     bool master_interrupt;
-    bool pending_activation;
+    bool pending_activation = false;
     bool pending_deactivation;
     bool halted = false;
 
@@ -98,7 +98,7 @@ private:
     void LDI_HL_A();
     void LDH_N_A();
     void LDH_A_N();
-
+    void LDHL_SP();
     void LOAD_16BIT_REG(Register* r1, Register* r2);
     void LOAD_16BIT_REG_IMMEDIATE(Register* r1, Register* r2, WORD immediate);
     void LD_NN_SP(WORD immediate);

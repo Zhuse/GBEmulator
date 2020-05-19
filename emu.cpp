@@ -34,7 +34,7 @@ void Emulator::load_cartridge() {
 	memset(cartridge_mem, 0, sizeof(cartridge_mem));
 
 	FILE* f;
-	f = fopen("test8.gb", "rb");
+	f = fopen("test9.gb", "rb");
 	if (f == NULL) {
 		printf("Error opening ROM\n");
 	}
@@ -45,15 +45,16 @@ void Emulator::load_cartridge() {
 void Emulator::update_timers(int cycles) {
 	update_divider(cycles);
     if (clock_enabled()) {
-        timer_counter -= cycles;
+        timer_counter += cycles;
 
-        if (timer_counter <= 0) {
+        if (timer_counter >= timer_limit) {
 
-			set_clk_freq();
+			set_timer_freq();
 
             // Timer overflow
             if (mem->read_mem(TIMA) == 0xFF) {
                 mem->write_mem(TIMA, mem->read_mem(TMA));
+				cpu->req_interrupt(2);
             } else {
                 mem->write_mem(TIMA, mem->read_mem(TIMA) + 1);
             }
@@ -68,8 +69,9 @@ void Emulator::update_divider(int cycles) {
 		mem->inc_divider_register();
 	}
 }
-void Emulator::set_clk_freq() {
-	timer_counter = mem->map_timer_counter(mem->read_mem(TMC));
+void Emulator::set_timer_freq() {
+	timer_counter = 0;
+	timer_limit = mem->map_timer_counter((mem->read_mem(TMC)) & 3);
 }
 
 bool Emulator::clock_enabled() {
