@@ -395,7 +395,7 @@ unsigned int CPU::execute_opcode() {
 	case 0x3B: DEC_NN(&SP); break;
 
 	/** CB **/
-	case 0xCB: return execute_next_opcode();
+	case 0xCB: return opcode_cycles[opcode] + execute_next_opcode();
 
 	/** DAA **/
 	case 0x27: DAA(); break;
@@ -1107,18 +1107,24 @@ void CPU::ADD_HL(Register* reg) {
 }
 
 void CPU::ADD_SP() {
-	BYTE data = RAM->read_mem(PC);
-	int result = SP.val + RAM->read_mem(PC);
+	int result = SP.val;
+	SIGNED_BYTE data = RAM->read_mem(PC);
 
 	reg_AF.lo = 0;
 
-	if (((SP.val ^ data ^ (result & 0xFFFF)) & 0x100) == 0x100)
-		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_C);
+	result += data;
 
-	if (((SP.val ^ data ^ (result & 0xFFFF)) & 0x10) == 0x10)
+	int no_carry_result = SP.val ^ data;
+	int carry_info = result ^ no_carry_result;
+
+	if ((carry_info & 0x10) == 0x10)
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_H);
 
-	SP.val = result;
+	if ((carry_info & 0x100) == 0x100)
+		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_C);
+
+	SP.val = (WORD)result;
+	PC++;
 }
 
 void CPU::INC_NN(Register* reg) {
