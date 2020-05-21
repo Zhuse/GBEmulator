@@ -90,6 +90,7 @@ unsigned int CPU::execute_opcode() {
 
 	opcode = RAM->read_mem(PC);
 	// fprintf(trace, "\n============================\nPC: %02X,     OPCODE: %02X \n", PC, opcode);
+	//print_state(opcode);
 	PC++;
 	switch (opcode) {
 
@@ -297,7 +298,8 @@ unsigned int CPU::execute_opcode() {
 	case 0x9B: SUB_N_N(&reg_AF.hi, reg_DE.lo, false, true); break;
 	case 0x9C: SUB_N_N(&reg_AF.hi, reg_HL.hi, false, true); break;
 	case 0x9D: SUB_N_N(&reg_AF.hi, reg_HL.lo, false, true); break;
-	case 0x9E: SUB_N_N(&reg_AF.hi, 0x0, true, true); break;
+	case 0x9E: SUB_N_N(&reg_AF.hi, RAM->read_mem(reg_HL.val), false, true); break;
+	case 0xDE: SUB_N_N(&reg_AF.hi, 0x0, true, true); break;
 
 	/** AND n **/
 	case 0xA7: AND_N_N(&reg_AF.hi, reg_AF.hi, false); break;
@@ -436,10 +438,10 @@ unsigned int CPU::execute_opcode() {
 	case 0xC3: PC = (RAM->read_mem(PC + 1) << 8) | RAM->read_mem(PC); break;
 
 	/** JP cc **/
-	case 0xC2: JP_CC(true, false, false, false); break;
-	case 0xCA: JP_CC(false, true, false, false); break;
-	case 0xD2: JP_CC(false, false, true, false); break;
-	case 0xDA: JP_CC(false, false, false, true); break;
+	case 0xC2: return JP_CC(true, false, false, false) ? opcode_cycles_conditional[opcode] : opcode_cycles[opcode];
+	case 0xCA: return JP_CC(false, true, false, false) ? opcode_cycles_conditional[opcode] : opcode_cycles[opcode];
+	case 0xD2: return JP_CC(false, false, true, false) ? opcode_cycles_conditional[opcode] : opcode_cycles[opcode];
+	case 0xDA: return JP_CC(false, false, false, true) ? opcode_cycles_conditional[opcode] : opcode_cycles[opcode];
 
 	/** JP HL **/
 	case 0xE9: PC = reg_HL.val; break;
@@ -456,19 +458,19 @@ unsigned int CPU::execute_opcode() {
 		break;
 	}
 	/** JR cc **/
-	case 0x20: JR_CC(true, false, false, false); break;
-	case 0x28: JR_CC(false, true, false, false); break;
-	case 0x30: JR_CC(false, false, true, false); break;
-	case 0x38: JR_CC(false, false, false, true); break;
+	case 0x20: return JR_CC(true, false, false, false) ? opcode_cycles_conditional[opcode]: opcode_cycles[opcode];
+	case 0x28: return JR_CC(false, true, false, false) ? opcode_cycles_conditional[opcode] : opcode_cycles[opcode];
+	case 0x30: return JR_CC(false, false, true, false) ? opcode_cycles_conditional[opcode] : opcode_cycles[opcode];
+	case 0x38: return JR_CC(false, false, false, true) ? opcode_cycles_conditional[opcode] : opcode_cycles[opcode];
 
 	/** CALL nn **/
 	case 0xCD: CALL(); break;
 	
 	/** CALL cc **/
-	case 0xC4: CALL_CC(true, false, false, false); break;
-	case 0xCC: CALL_CC(false, true, false, false); break;
-	case 0xD4: CALL_CC(false, false, true, false); break;
-	case 0xDC: CALL_CC(false, false, false, true); break;
+	case 0xC4: return CALL_CC(true, false, false, false) ? opcode_cycles_conditional[opcode] : opcode_cycles[opcode];
+	case 0xCC: return CALL_CC(false, true, false, false) ? opcode_cycles_conditional[opcode] : opcode_cycles[opcode];
+	case 0xD4: return CALL_CC(false, false, true, false) ? opcode_cycles_conditional[opcode] : opcode_cycles[opcode];
+	case 0xDC: return CALL_CC(false, false, false, true) ? opcode_cycles_conditional[opcode] : opcode_cycles[opcode];
 
 	/** RST n **/
 	case 0xC7: RST(0x00); break;
@@ -484,10 +486,10 @@ unsigned int CPU::execute_opcode() {
 	case 0xC9: RET(); break;
 	
 	/** RET cc **/
-	case 0xC0: RET_CC(true, false, false, false); break;
-	case 0xC8: RET_CC(false, true, false, false); break;
-	case 0xD0: RET_CC(false, false, true, false); break;
-	case 0xD8: RET_CC(false, false, false, true); break;
+	case 0xC0: return RET_CC(true, false, false, false) ? opcode_cycles_conditional[opcode] : opcode_cycles[opcode];
+	case 0xC8: return RET_CC(false, true, false, false) ? opcode_cycles_conditional[opcode] : opcode_cycles[opcode];
+	case 0xD0: return RET_CC(false, false, true, false) ? opcode_cycles_conditional[opcode] : opcode_cycles[opcode];
+	case 0xD8: return RET_CC(false, false, false, true) ? opcode_cycles_conditional[opcode] : opcode_cycles[opcode];
 
 	/** RETI **/
 	case 0xD9: {
@@ -502,7 +504,6 @@ unsigned int CPU::execute_opcode() {
 	/** DI **/
 	case 0xF3: pending_deactivation = true; break;
 	}
-	//print_state(opcode);
 	
 	reg_AF.lo &= 0xF0;
 	return opcode_cycles[opcode];
@@ -1360,33 +1361,33 @@ void CPU::SET_B_R(BYTE* reg, unsigned int index) {
 	BIT_SET(*reg, index);
 }
 
-void CPU::JP_CC(bool nz, bool z, bool nc, bool c) {
+bool CPU::JP_CC(bool nz, bool z, bool nc, bool c) {
 	if (nz) {
 		if (!BIT_CHECK(reg_AF.lo, FLAG_Z)) {
 			PC = ((RAM->read_mem(PC + 1) << 8) | RAM->read_mem(PC));
-			return;
+			return true;
 		}
 	} else if (z) {
 		if (BIT_CHECK(reg_AF.lo, FLAG_Z)) {
 			PC = ((RAM->read_mem(PC + 1) << 8) | RAM->read_mem(PC));
-			return;
+			return true;
 		}
 	} else if (nc) {
 		if (!BIT_CHECK(reg_AF.lo, FLAG_C)) {
 			PC = ((RAM->read_mem(PC + 1) << 8) | RAM->read_mem(PC));
-			return;
+			return true;
 		}
 	} else if (c) {
 		if (BIT_CHECK(reg_AF.lo, FLAG_C)) {
 			PC = ((RAM->read_mem(PC + 1) << 8) | RAM->read_mem(PC));
-			return;
+			return true;
 		}
 	}
 	PC += 2;
-
+	return false;
 }
 
-void CPU::JR_CC(bool nz, bool z, bool nc, bool c) {
+bool CPU::JR_CC(bool nz, bool z, bool nc, bool c) {
 	BYTE add = RAM->read_mem(PC);
 	if (nz) {
 		if (!BIT_CHECK(reg_AF.lo, FLAG_Z)) {
@@ -1394,9 +1395,7 @@ void CPU::JR_CC(bool nz, bool z, bool nc, bool c) {
 				PC += add + 1;
 			else
 				PC -= (BYTE)(0xFF - add);
-		}
-		else {
-			PC++;
+			return true;
 		}
 	}
 	else if (z) {
@@ -1405,9 +1404,8 @@ void CPU::JR_CC(bool nz, bool z, bool nc, bool c) {
 				PC += add + 1;
 			else
 				PC -= (BYTE)(0xFF - add);
-		}
-		else {
-			PC++;
+
+			return true;
 		}
 	}
 	else if (nc) {
@@ -1416,9 +1414,8 @@ void CPU::JR_CC(bool nz, bool z, bool nc, bool c) {
 				PC += add + 1;
 			else
 				PC -= (BYTE)(0xFF - add);
-		}
-		else {
-			PC++;
+
+			return true;
 		}
 	}
 	else if (c) {
@@ -1427,11 +1424,13 @@ void CPU::JR_CC(bool nz, bool z, bool nc, bool c) {
 				PC += add + 1;
 			else
 				PC -= (BYTE)(0xFF - add);
-		}
-		else {
-			PC++;
+
+			return true;
 		}
 	}
+
+	PC++;
+	return false;
 }
 
 void CPU::CALL() {
@@ -1440,32 +1439,33 @@ void CPU::CALL() {
 	PC = immediate;
 }
 
-void CPU::CALL_CC(bool nz, bool z, bool nc, bool c) {
+bool CPU::CALL_CC(bool nz, bool z, bool nc, bool c) {
 	if (nz) {
 		if (!BIT_CHECK(reg_AF.lo, FLAG_Z)) {
 			CALL();
-			return;
+			return true;
 		}
 	}
 	else if (z) {
 		if (BIT_CHECK(reg_AF.lo, FLAG_Z)) {
 			CALL();
-			return;
+			return true;
 		}
 	}
 	else if (nc) {
 		if (!BIT_CHECK(reg_AF.lo, FLAG_C)) {
 			CALL();
-			return;
+			return true;
 		}
 	}
 	else if (c) {
 		if (BIT_CHECK(reg_AF.lo, FLAG_C)) {
 			CALL();
-			return;
+			return true;
 		}
 	}
 	PC += 2;
+	return false;
 }
 
 void CPU::RST(BYTE immediate) {
@@ -1473,23 +1473,32 @@ void CPU::RST(BYTE immediate) {
 	PC = immediate;
 }
 
-void CPU::RET_CC(bool nz, bool z, bool nc, bool c) {
+bool CPU::RET_CC(bool nz, bool z, bool nc, bool c) {
 	if (nz) {
-		if (!BIT_CHECK(reg_AF.lo, FLAG_Z))
+		if (!BIT_CHECK(reg_AF.lo, FLAG_Z)) {
 			RET();
+			return true;
+		}
 	}
 	else if (z) {
-		if (BIT_CHECK(reg_AF.lo, FLAG_Z))
+		if (BIT_CHECK(reg_AF.lo, FLAG_Z)) {
 			RET();
+			return true;
+		}
 	}
 	else if (nc) {
-		if (!BIT_CHECK(reg_AF.lo, FLAG_C))
+		if (!BIT_CHECK(reg_AF.lo, FLAG_C)) {
 			RET();
+			return true;
+		}
 	}
 	else if (c) {
-		if (BIT_CHECK(reg_AF.lo, FLAG_C))
+		if (BIT_CHECK(reg_AF.lo, FLAG_C)) {
 			RET();
+			return true;
+		}
 	}
+	return false;
 }
 
 void CPU::RET() {

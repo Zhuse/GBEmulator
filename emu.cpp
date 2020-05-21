@@ -34,7 +34,7 @@ void Emulator::load_cartridge() {
 	memset(cartridge_mem, 0, sizeof(cartridge_mem));
 
 	FILE* f;
-	f = fopen("instr_timing.gb", "rb");
+	f = fopen("tetris.gb", "rb");
 	if (f == NULL) {
 		printf("Error opening ROM\n");
 	}
@@ -47,8 +47,9 @@ void Emulator::update_timers(int cycles) {
     if (clock_enabled()) {
         timer_counter += cycles;
 
-        if (timer_counter >= timer_limit) {
+        while (timer_counter >= timer_limit) {
 
+			timer_counter -= timer_limit;
 			set_timer_freq();
 
             // Timer overflow
@@ -70,7 +71,6 @@ void Emulator::update_divider(int cycles) {
 	}
 }
 void Emulator::set_timer_freq() {
-	timer_counter = 0;
 	timer_limit = mem->map_timer_counter((mem->read_mem(TMC)) & 3);
 }
 

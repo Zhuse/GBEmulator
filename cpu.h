@@ -23,7 +23,7 @@ union Register
 class Memory;
 class CPU {
 private:
-    const unsigned int opcode_cycles[256] = {
+    const BYTE opcode_cycles[256] = {
         1, 3, 2, 2, 1, 1, 2, 1, 5, 2, 2, 2, 1, 1, 2, 1,
         1, 3, 2, 2, 1, 1, 2, 1, 3, 2, 2, 2, 1, 1, 2, 1,
         2, 3, 2, 2, 1, 1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 1,
@@ -42,7 +42,7 @@ private:
         3, 3, 2, 1, 0, 4, 2, 4, 3, 2, 4, 1, 0, 0, 2, 4
     };
 
-    const unsigned int opcode_cycles_cb[256] = {
+    const BYTE opcode_cycles_cb[256] = {
         2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
         2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
         2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
@@ -59,6 +59,25 @@ private:
         2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
         2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
         2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2
+    };
+
+    const BYTE opcode_cycles_conditional[256] = {
+        1, 3, 2, 2, 1, 1, 2, 1, 5, 2, 2, 2, 1, 1, 2, 1,
+        0, 3, 2, 2, 1, 1, 2, 1, 3, 2, 2, 2 ,1 ,1 ,2 ,1,
+        3, 3, 2, 2, 1, 1, 2, 1, 3, 2, 2, 2, 1, 1, 2, 1,
+        3, 3, 2, 2, 3, 3, 3, 1, 3, 2, 2, 2, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        2, 2, 2, 2, 2, 2, 0, 2, 1, 1, 1, 1, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        5, 3, 4, 4, 6, 4, 2, 4, 5, 4, 4, 0, 6, 6, 2, 4,
+        5, 3, 4, 0, 6, 4, 2, 4, 5, 4, 4, 0, 6, 0, 2, 4,
+        3, 3, 2, 0, 0, 4, 2, 4, 4, 1, 4, 0, 0, 0, 2, 4,
+        3, 3, 2, 1, 0, 4, 2, 4, 3, 2, 4, 1, 0, 0, 2, 4
     };
 
     Register reg_AF;
@@ -136,13 +155,14 @@ private:
     void RES_B_R(BYTE* reg, unsigned int index);
     void SET_HELPER(BYTE opcode);
     void SET_B_R(BYTE* reg, unsigned int index);
-    void JP_CC(bool nz, bool z, bool nc, bool c);
-    void JR_CC(bool nz, bool z, bool nc, bool c);
     void CALL();
-    void CALL_CC(bool nz, bool z, bool nc, bool c);
     void RST(BYTE immediate);
     void RET();
-    void RET_CC(bool nz, bool z, bool nc, bool c);
+
+    bool CALL_CC(bool nz, bool z, bool nc, bool c);
+    bool JP_CC(bool nz, bool z, bool nc, bool c);
+    bool JR_CC(bool nz, bool z, bool nc, bool c);
+    bool RET_CC(bool nz, bool z, bool nc, bool c);
 public: 
     CPU(Memory* RAM_ptr);
     void init();
