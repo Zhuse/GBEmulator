@@ -702,6 +702,7 @@ unsigned int CPU::execute_next_opcode() {
 		RAM->write_mem(reg_HL.val, data);
 		break;
 	}
+	default: break;
 	}
 	//print_state(opcode);
 	clear_unused_bits();

@@ -11,6 +11,7 @@ public:
 	void write_mem(WORD addr, BYTE data);
 	void inc_divider_register();
 	void inc_scanline_register();
+	void write_to_joypad(BYTE data);
 	BYTE write_mem_timer(BYTE data);
 	BYTE get_clk_freq() const;
 	BYTE map_timer_counter(BYTE freq);

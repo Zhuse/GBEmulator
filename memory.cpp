@@ -76,6 +76,9 @@ void Memory::write_mem(WORD addr, BYTE data) {
     else if (addr == DMA_TRANSFER) {
         dma_transfer(data);
     }
+    else if (addr == JOYPAD) {
+        return;
+    }
     else
     {
         RAM[addr] = data;
@@ -87,6 +90,10 @@ void Memory::dma_transfer(BYTE data) {
     for (int i = 0; i < 0xA0; i++) {
         write_mem(OAM_BASE + i, read_mem(spr_base + i));
     }
+}
+
+void Memory::write_to_joypad(BYTE data) {
+    RAM[JOYPAD] = data;
 }
 
 BYTE Memory::write_mem_timer(BYTE data) {

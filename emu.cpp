@@ -34,7 +34,7 @@ void Emulator::load_cartridge() {
 	memset(cartridge_mem, 0, sizeof(cartridge_mem));
 
 	FILE* f;
-	f = fopen("test11.gb", "rb");
+	f = fopen("tetris.gb", "rb");
 	if (f == NULL) {
 		printf("Error opening ROM\n");
 	}
@@ -88,25 +88,24 @@ void Emulator::register_keypress(BYTE key) {
 			cpu->req_interrupt(4);
 		}
 		BIT_CLEAR(joypad, key);
-		mem->write_mem(JOYPAD, joypad);
+		mem->write_to_joypad(joypad);
 	}
 	else if (directional && key <= 0x3) {
 		if (BIT_CHECK(joypad, key % 4)) {
 			cpu->req_interrupt(4);
 		}
 		BIT_CLEAR(joypad, key);
-		mem->write_mem(JOYPAD, joypad);
+		mem->write_to_joypad(joypad);
 	}
 	else {
 		return;
 	}
-	printf("%d", key);
 }
 
 void Emulator::unregister_keypress(BYTE key) {
 	BYTE joypad = mem->read_mem(JOYPAD);
 	BIT_SET(joypad, key % 4);
-	mem->write_mem(JOYPAD, joypad);
+	mem->write_to_joypad(joypad);
 }
 
 void Emulator::draw(int cycles) {
@@ -250,7 +249,7 @@ void Emulator::draw_tiles(BYTE lcd_status_reg, bool window) {
 		BYTE tile_data2 = mem->read_mem(tile_loc + (tile_line * 2) + 1);
 
 		BYTE pixel_idx = tile_x % 8;
-		BYTE pixel_colourcode = (BIT_CHECK(tile_data2, 8 - pixel_idx) << 1 | BIT_CHECK(tile_data1, 8 - pixel_idx));
+		BYTE pixel_colourcode = (BIT_CHECK(tile_data2, 7 - pixel_idx) << 1 | BIT_CHECK(tile_data1, 7 - pixel_idx));
 		assign_colour(pxl, curr_scanline, pixel_colourcode);
 	}
 }
