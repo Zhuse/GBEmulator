@@ -90,7 +90,7 @@ unsigned int CPU::execute_opcode() {
 
 	opcode = RAM->read_mem(PC);
 	// fprintf(trace, "\n============================\nPC: %02X,     OPCODE: %02X \n", PC, opcode);
-	//print_state(opcode);
+	// print_state(opcode);
 	PC++;
 	switch (opcode) {
 
@@ -646,7 +646,7 @@ unsigned int CPU::execute_next_opcode() {
 		break;
 	}
 	case 0x46: case 0x4E: case 0x56: case 0x5E: case 0x66: case 0x6E: case 0x76: case 0x7E: {
-		BYTE hi_nibble = opcode & 0xF0;
+		BYTE hi_nibble = (opcode & 0xF0) >> 4;
 		BYTE lo_nibble = opcode & 0xF;
 		BYTE index_base = 2 * (hi_nibble - 0x4);
 		BYTE index_add = lo_nibble / (0x8);
@@ -669,7 +669,7 @@ unsigned int CPU::execute_next_opcode() {
 	}
 
 	case 0x86: case 0x8E: case 0x96: case 0x9E: case 0xA6: case 0xAE: case 0xB6: case 0xBE: {
-		BYTE hi_nibble = opcode & 0xF0;
+		BYTE hi_nibble = (opcode & 0xF0) >> 4;
 		BYTE lo_nibble = opcode & 0xF;
 		BYTE index_base = 2 * (hi_nibble - 0x8);
 		BYTE index_add = lo_nibble / (0x8);
@@ -693,7 +693,7 @@ unsigned int CPU::execute_next_opcode() {
 	}
 
 	case 0xC6: case 0xCE: case 0xD6: case 0xDE: case 0xE6: case 0xEE: case 0xF6: case 0xFE: {
-		BYTE hi_nibble = opcode & 0xF0;
+		BYTE hi_nibble = (opcode & 0xF0) >> 4;
 		BYTE lo_nibble = opcode & 0xF;
 		BYTE index_base = 2 * (hi_nibble - 0xC);
 		BYTE index_add = lo_nibble / (0x8);
@@ -724,7 +724,8 @@ void CPU::print_state(BYTE opcode) {
 	fprintf(trace, "FLAG C: %d       FF48: %02X\n", BIT_CHECK(reg_AF.lo, FLAG_C), RAM->read_mem(0xFF48));
 	fprintf(trace, "FF4A: %02X        FF4B: %02X\n", RAM->read_mem(0xFF4A), RAM->read_mem(0xFF4B));
 	fprintf(trace, "STACK TOP: %02X%02X\n", RAM->read_mem(SP.val + 1), RAM->read_mem(SP.val));
-	fprintf(trace, "RAM[D81E]: %02X, RAM[D81F]: %02X\n", RAM->read_mem(0xD81E), RAM->read_mem(0xD81F));
+	fprintf(trace, "RAM[FF80]: %02X\n", RAM->read_mem(0xFF80));
+	fprintf(trace, "RAM[FF40]: %02X, RAM[FF44]: %02X\n", RAM->read_mem(0xFF40), RAM->read_mem(0xFF44));
 	fprintf(trace, "RAM[FF0F]: %02X, TIMA: %02X, TMA: %02X, TMC: %02X", RAM->read_mem(0xFF0F), RAM->read_mem(TIMA), RAM->read_mem(TMA), RAM->read_mem(TMC));
 }
 
@@ -1148,23 +1149,36 @@ void CPU::SWAP(BYTE* reg) {
 }
 
 void CPU::DAA() {
-	BYTE old = reg_AF.hi;	
-	BYTE result = 0;
-	BYTE shift = 0;
-	if (reg_AF.hi == 0x0)
-		BIT_SET(reg_AF.lo, FLAG_Z);
-	if (reg_AF.hi > 99)
-		BIT_SET(reg_AF.lo, FLAG_C);
-	else
-		BIT_CLEAR(reg_AF.lo, FLAG_C);
-	
-	BIT_SET(reg_AF.lo, FLAG_H);
-
-	while (old > 0) {
-		result |= (old % 10) << (shift++ << 2);
-		old /= 10;
+	int a = reg_AF.hi;
+	if (!BIT_CHECK(reg_AF.lo, FLAG_N)) {
+		if (BIT_CHECK(reg_AF.lo, FLAG_C) || a > 0x99) {
+			a += 0x60;
+			BIT_SET(reg_AF.lo, FLAG_C);
+		}
+		if (BIT_CHECK(reg_AF.lo, FLAG_H) || (a & 0x0f) > 0x09) {
+			a += 0x6;
+		}
 	}
-	reg_AF.hi = result;
+	else {
+		if (BIT_CHECK(reg_AF.lo, FLAG_C)) {
+			a -= 0x60;
+			BIT_SET(reg_AF.lo, FLAG_C);
+		}
+		if (BIT_CHECK(reg_AF.lo, FLAG_H)) {
+			a -= 0x6;
+		}
+	}
+
+	if (a == 0) {
+		BIT_SET(reg_AF.lo, FLAG_Z);
+	}
+	else {
+		BIT_CLEAR(reg_AF.lo, FLAG_Z);
+	}
+
+	BIT_CLEAR(reg_AF.lo, FLAG_H);
+
+	reg_AF.hi = a;
 }
 
 void CPU::CPL() {

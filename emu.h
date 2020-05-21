@@ -28,5 +28,6 @@ public:
     Emulator();
     void tick();
     void load_cartridge();
-    
+    void register_keypress(BYTE key);
+    void unregister_keypress(BYTE key);
 };

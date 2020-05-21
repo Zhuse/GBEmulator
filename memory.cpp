@@ -13,6 +13,7 @@ void Memory::init() {
     for (int i = 0x0; i < 0x8000; i++) {
         RAM[i] = cartridge[i];
     }
+    RAM[0xFF00] = 0xCF;
     RAM[0xFF05] = 0x00;
     RAM[0xFF06] = 0x00;
     RAM[0xFF07] = 0x00;
@@ -70,9 +71,6 @@ void Memory::write_mem(WORD addr, BYTE data) {
     }
     else if (addr == 0xFF04) 
     {
-        RAM[addr] = 0;
-    }
-    else if (addr == CURR_SCANLINE) {
         RAM[addr] = 0;
     }
     else if (addr == DMA_TRANSFER) {

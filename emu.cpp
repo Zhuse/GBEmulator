@@ -34,7 +34,7 @@ void Emulator::load_cartridge() {
 	memset(cartridge_mem, 0, sizeof(cartridge_mem));
 
 	FILE* f;
-	f = fopen("tetris.gb", "rb");
+	f = fopen("test11.gb", "rb");
 	if (f == NULL) {
 		printf("Error opening ROM\n");
 	}
@@ -76,6 +76,37 @@ void Emulator::set_timer_freq() {
 
 bool Emulator::clock_enabled() {
 	return BIT_CHECK(mem->read_mem(TMC), 2);
+}
+
+void Emulator::register_keypress(BYTE key) {
+	BYTE joypad = mem->read_mem(JOYPAD);
+	bool select = BIT_CHECK(joypad, 5);
+	bool directional = BIT_CHECK(joypad, 4);
+
+	if (select && key > 0x3) {
+		if (BIT_CHECK(joypad, key % 4)) {
+			cpu->req_interrupt(4);
+		}
+		BIT_CLEAR(joypad, key);
+		mem->write_mem(JOYPAD, joypad);
+	}
+	else if (directional && key <= 0x3) {
+		if (BIT_CHECK(joypad, key % 4)) {
+			cpu->req_interrupt(4);
+		}
+		BIT_CLEAR(joypad, key);
+		mem->write_mem(JOYPAD, joypad);
+	}
+	else {
+		return;
+	}
+	printf("%d", key);
+}
+
+void Emulator::unregister_keypress(BYTE key) {
+	BYTE joypad = mem->read_mem(JOYPAD);
+	BIT_SET(joypad, key % 4);
+	mem->write_mem(JOYPAD, joypad);
 }
 
 void Emulator::draw(int cycles) {
