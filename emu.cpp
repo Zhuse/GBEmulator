@@ -79,33 +79,27 @@ bool Emulator::clock_enabled() {
 }
 
 void Emulator::register_keypress(BYTE key) {
-	BYTE joypad = mem->read_mem(JOYPAD);
-	bool select = BIT_CHECK(joypad, 5);
-	bool directional = BIT_CHECK(joypad, 4);
+	BYTE joypad_reg = mem->read_mem(JOYPAD);
+	BYTE joypad_state = mem->get_joypad_state();
+	bool select = BIT_CHECK(joypad_reg, 5);
+	bool directional = BIT_CHECK(joypad_reg, 4);
 
 	if (select && key > 0x3) {
-		if (BIT_CHECK(joypad, key % 4)) {
+		if (BIT_CHECK(joypad_state, key)) {
 			cpu->req_interrupt(4);
 		}
-		BIT_CLEAR(joypad, key);
-		mem->write_to_joypad(joypad);
+		mem->write_to_joypad(key, true);
 	}
 	else if (directional && key <= 0x3) {
-		if (BIT_CHECK(joypad, key % 4)) {
+		if (BIT_CHECK(joypad_state, key)) {
 			cpu->req_interrupt(4);
 		}
-		BIT_CLEAR(joypad, key);
-		mem->write_to_joypad(joypad);
-	}
-	else {
-		return;
+		mem->write_to_joypad(key, true);
 	}
 }
 
 void Emulator::unregister_keypress(BYTE key) {
-	BYTE joypad = mem->read_mem(JOYPAD);
-	BIT_SET(joypad, key % 4);
-	mem->write_to_joypad(joypad);
+	mem->write_to_joypad(key, false);
 }
 
 void Emulator::draw(int cycles) {
@@ -158,8 +152,8 @@ void Emulator::draw_sprites() {
 	BYTE curr_scanline = mem->read_mem(CURR_SCANLINE);
 	for (int spr = 0; spr < 40; spr++) {
 		WORD spr_attr_addr = OAM_BASE + spr * 4;
-		BYTE spr_y = mem->read_mem(spr_attr_addr) + 16;
-		BYTE spr_x = mem->read_mem(spr_attr_addr + 1) + 8;
+		BYTE spr_y = mem->read_mem(spr_attr_addr) - 16;
+		BYTE spr_x = mem->read_mem(spr_attr_addr + 1) - 8;
 		BYTE spr_num = mem->read_mem(spr_attr_addr + 2);
 		BYTE spr_attr = mem->read_mem(spr_attr_addr + 3);
 
@@ -171,7 +165,7 @@ void Emulator::draw_sprites() {
 			BYTE spr_data1 = mem->read_mem(spr_data_addr);
 			BYTE spr_data2 = mem->read_mem(spr_data_addr + 1);
 
-			for (int x = 0; x < 7; x++) {
+			for (int x = 0; x < 8; x++) {
 				BYTE spr_pixel_idx;
 				if (flip_x) {
 					spr_pixel_idx = 7 - x;

@@ -3,6 +3,7 @@
 
 Memory::Memory(BYTE* cartridge_ptr) {
     cartridge = cartridge_ptr;
+    joypad_state = 0xFF;
     init();
 }
 
@@ -13,7 +14,6 @@ void Memory::init() {
     for (int i = 0x0; i < 0x8000; i++) {
         RAM[i] = cartridge[i];
     }
-    RAM[0xFF00] = 0xCF;
     RAM[0xFF05] = 0x00;
     RAM[0xFF06] = 0x00;
     RAM[0xFF07] = 0x00;
@@ -77,6 +77,10 @@ void Memory::write_mem(WORD addr, BYTE data) {
         dma_transfer(data);
     }
     else if (addr == JOYPAD) {
+        BYTE joypad_data = RAM[addr];
+        BIT_CHECK(data, 5) ? BIT_SET(joypad_data, 5) : BIT_CLEAR(joypad_data, 5);
+        BIT_CHECK(data, 4) ? BIT_SET(joypad_data, 4) : BIT_CLEAR(joypad_data, 4);
+        RAM[addr] = joypad_data;
         return;
     }
     else
@@ -92,10 +96,15 @@ void Memory::dma_transfer(BYTE data) {
     }
 }
 
-void Memory::write_to_joypad(BYTE data) {
-    RAM[JOYPAD] = data;
+void Memory::write_to_joypad(BYTE idx, bool pressed) {
+    if (idx >= 0 && idx < 8) {
+        pressed ? BIT_CLEAR(joypad_state, idx) : BIT_SET(joypad_state, idx);
+    }
 }
 
+BYTE Memory::get_joypad_state() {
+    return joypad_state;
+}
 BYTE Memory::write_mem_timer(BYTE data) {
     RAM[TMC] = data;
     BYTE new_freq = read_mem(TMC);
@@ -135,7 +144,24 @@ BYTE Memory::read_mem(WORD addr) const
     {
 
     }
+    else if (addr == JOYPAD) {
+        BYTE joypad = RAM[addr];
+        bool select = BIT_CHECK(joypad, 5);
+        bool directional = BIT_CHECK(joypad, 4);
+        BYTE hi_nibble = (joypad & 0x30);
+        BYTE lo_nibble;
 
+        if (select && !directional) {
+            lo_nibble = joypad_state & 0x0F;
+        }
+        else if (directional && !select) {
+            lo_nibble = (joypad_state & 0xF0) >> 4;
+        }
+        else {
+            return joypad;
+        }
+        return hi_nibble | lo_nibble;
+    }
     // else return memory
     return RAM[addr];
 }
