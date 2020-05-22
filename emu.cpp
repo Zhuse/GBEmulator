@@ -150,6 +150,9 @@ void Emulator::draw_scanline() {
 
 void Emulator::draw_sprites() {
 	BYTE curr_scanline = mem->read_mem(CURR_SCANLINE);
+	BYTE lcd_status_reg = mem->read_mem(LCD_CONTROL_REG);
+	BYTE spr_height = BIT_CHECK(lcd_status_reg, 2) ? 16 : 8;
+
 	for (int spr = 0; spr < 40; spr++) {
 		WORD spr_attr_addr = OAM_BASE + spr * 4;
 		BYTE spr_y = mem->read_mem(spr_attr_addr) - 16;
@@ -157,11 +160,11 @@ void Emulator::draw_sprites() {
 		BYTE spr_num = mem->read_mem(spr_attr_addr + 2);
 		BYTE spr_attr = mem->read_mem(spr_attr_addr + 3);
 
-		if (curr_scanline >= spr_y && curr_scanline <= spr_y + 16) {
+		if (curr_scanline >= spr_y && curr_scanline <= spr_y + spr_height) {
 			BYTE flip_x = BIT_CHECK(spr_attr, 5);
 			BYTE flip_y = BIT_CHECK(spr_attr, 6);
 			BYTE line_idx = flip_y? 0x7 - (curr_scanline - spr_y): curr_scanline - spr_y;
-			BYTE spr_data_addr = TILE_DATA_1_BASE + (spr * SPRITE_SIZE_BYTES) + line_idx * 2;
+			WORD spr_data_addr = TILE_DATA_1_BASE + (spr_num * SPRITE_SIZE_BYTES) + line_idx * 2;
 			BYTE spr_data1 = mem->read_mem(spr_data_addr);
 			BYTE spr_data2 = mem->read_mem(spr_data_addr + 1);
 
@@ -174,7 +177,7 @@ void Emulator::draw_sprites() {
 					spr_pixel_idx = x;
 				}
 				BYTE pixel_idx = (spr_x + spr_pixel_idx) % 8;
-				BYTE pixel_colourcode = (BIT_CHECK(spr_data2, pixel_idx) << 1 | BIT_CHECK(spr_data1, pixel_idx));
+				BYTE pixel_colourcode = (BIT_CHECK(spr_data2, 7 - pixel_idx) << 1 | BIT_CHECK(spr_data1, 7 - pixel_idx));
 				assign_colour(spr_x + pixel_idx, curr_scanline, pixel_colourcode);
 			}
 		}
@@ -254,27 +257,27 @@ void Emulator::assign_colour(BYTE x, BYTE y, BYTE code) {
 	BYTE b = 0;
 	switch (code) {
 	case 0x0: {
-		r = 0;
-		g = 0;
-		b = 0;
+		r = 0xFF;
+		g = 0xFF;
+		b = 0xFF;
 		break;
 	}
 	case 0x1: {
-		r = 0x60;
-		g = 0x60;
-		b = 0x60;
-		break;
-	}
-	case 0x2: {
 		r = 0xB0;
 		g = 0xB0;
 		b = 0xB0;
 		break;
 	}
+	case 0x2: {
+		r = 0x60;
+		g = 0x60;
+		b = 0x60;
+		break;
+	}
 	case 0x3: {
-		r = 0xFF;
-		g = 0xFF;
-		b = 0xFF;
+		r = 0x0;
+		g = 0x0;
+		b = 0x0;
 		break;
 	}
 	default: {
