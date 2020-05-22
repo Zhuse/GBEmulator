@@ -86,10 +86,6 @@ void Memory::write_mem(WORD addr, BYTE data) {
         RAM[addr] = joypad_data;
         return;
     }
-    else if ((addr >= 0xFF4C) && (addr <= 0xFF7F))
-    {
-        return;
-    }
     else
     {
         RAM[addr] = data;

@@ -34,7 +34,7 @@ void Emulator::load_cartridge() {
 	memset(cartridge_mem, 0, sizeof(cartridge_mem));
 
 	FILE* f;
-	f = fopen("asteroids.gb", "rb");
+	f = fopen("castelian.gb", "rb");
 	if (f == NULL) {
 		printf("Error opening ROM\n");
 	}
@@ -160,7 +160,7 @@ void Emulator::draw_sprites() {
 		BYTE spr_num = mem->read_mem(spr_attr_addr + 2);
 		BYTE spr_attr = mem->read_mem(spr_attr_addr + 3);
 
-		if (curr_scanline >= spr_y && curr_scanline <= spr_y + spr_height) {
+		if (curr_scanline >= spr_y && curr_scanline < spr_y + spr_height) {
 			BYTE flip_x = BIT_CHECK(spr_attr, 5);
 			BYTE flip_y = BIT_CHECK(spr_attr, 6);
 			BYTE line_idx = flip_y? 0x7 - (curr_scanline - spr_y): curr_scanline - spr_y;
@@ -178,7 +178,9 @@ void Emulator::draw_sprites() {
 				}
 				BYTE pixel_idx = (spr_x + spr_pixel_idx) % 8;
 				BYTE pixel_colourcode = (BIT_CHECK(spr_data2, 7 - pixel_idx) << 1 | BIT_CHECK(spr_data1, 7 - pixel_idx));
-				assign_colour(spr_x + pixel_idx, curr_scanline, pixel_colourcode);
+				if (pixel_colourcode != 0x0) {
+					assign_colour(spr_x + pixel_idx, curr_scanline, pixel_colourcode);
+				}
 			}
 		}
 	}
@@ -297,6 +299,8 @@ void Emulator::set_lcd_status() {
 	if (!lcd_enabled) {
 		mem->write_mem(CURR_SCANLINE, 0);
 		scanline_counter = 0;
+		status = BIT_CLEAR(status, 1);
+		status = BIT_CLEAR(status, 0);
 	}
 	else {
 		if (curr_scanline >= SCREEN_W) {
