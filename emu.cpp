@@ -34,7 +34,7 @@ void Emulator::load_cartridge() {
 	memset(cartridge_mem, 0, sizeof(cartridge_mem));
 
 	FILE* f;
-	f = fopen("tetris.gb", "rb");
+	f = fopen("asteroids.gb", "rb");
 	if (f == NULL) {
 		printf("Error opening ROM\n");
 	}
@@ -44,10 +44,10 @@ void Emulator::load_cartridge() {
 
 void Emulator::update_timers(int cycles) {
 	update_divider(cycles);
-    if (clock_enabled()) {
+    if (clock_enabled() && timer_limit) {
         timer_counter += cycles;
 
-        while (timer_counter >= timer_limit) {
+        if (timer_counter >= timer_limit) {
 
 			timer_counter -= timer_limit;
 			set_timer_freq();
@@ -224,20 +224,15 @@ void Emulator::draw_tiles(BYTE lcd_status_reg, bool window) {
 		WORD tile_col = tile_x / 8;
 		WORD tile_addr = (tile_row * 32) + tile_col;
 
-		WORD tile_num = mem->read_mem(tile_map_base + tile_addr);
+		SIGNED_BYTE tile_num = mem->read_mem(tile_map_base + tile_addr);
 		
 		WORD tile_loc = tile_data_base;
 
 		if (unsigned_select) {
-			tile_loc += tile_num * 16;
+			tile_loc += (BYTE)tile_num * 16;
 		}
 		else {
-			if (tile_num >= 0x80){
-				tile_loc -= (tile_num) * 16;
-			}
-			else {
-				tile_loc += (tile_num * 16);
-			}
+			tile_loc += tile_num * 16;
 		}
 
 		BYTE tile_line = tile_y % 8;

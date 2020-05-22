@@ -73,6 +73,9 @@ void Memory::write_mem(WORD addr, BYTE data) {
     {
         RAM[addr] = 0;
     }
+    else if (addr == CURR_SCANLINE) {
+        RAM[addr] = 0;
+    }
     else if (addr == DMA_TRANSFER) {
         dma_transfer(data);
     }
@@ -81,6 +84,10 @@ void Memory::write_mem(WORD addr, BYTE data) {
         BIT_CHECK(data, 5) ? BIT_SET(joypad_data, 5) : BIT_CLEAR(joypad_data, 5);
         BIT_CHECK(data, 4) ? BIT_SET(joypad_data, 4) : BIT_CLEAR(joypad_data, 4);
         RAM[addr] = joypad_data;
+        return;
+    }
+    else if ((addr >= 0xFF4C) && (addr <= 0xFF7F))
+    {
         return;
     }
     else
