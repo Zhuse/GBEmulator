@@ -69,7 +69,7 @@ void Memory::write_mem(WORD addr, BYTE data) {
     {
         return;
     }
-    else if (addr == 0xFF04) 
+    else if (addr == DIVIDER_REG) 
     {
         RAM[addr] = 0;
     }
@@ -130,11 +130,11 @@ WORD Memory::map_timer_counter(BYTE freq) {
 }
 
 void Memory::inc_divider_register() {
-    RAM[0xFF04]++;
+    RAM[DIVIDER_REG]++;
 }
 
 void Memory::inc_scanline_register() {
-    RAM[0xFF44]++;
+    RAM[CURR_SCANLINE]++;
 }
 
 BYTE Memory::get_clk_freq() const {

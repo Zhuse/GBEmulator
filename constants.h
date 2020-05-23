@@ -1,4 +1,5 @@
 #define JOYPAD 0xFF00
+#define DIVIDER_REG 0xFF04
 #define TIMA 0xFF05
 #define TMA 0xFF06
 #define TMC 0xFF07
