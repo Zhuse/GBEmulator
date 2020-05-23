@@ -28,8 +28,8 @@
 #define LAST_SCANLINE 153
 #define H_BLANK_MODE 0x0
 #define V_BLANK_MODE 0x1
-#define SPRITE_SEARCH_MODE 0x10
-#define DATA_TRANSFER_MODE 0x11
+#define SPRITE_SEARCH_MODE 0x2
+#define DATA_TRANSFER_MODE 0x3
 
 #define SPRITE_SIZE_BYTES 16
 typedef unsigned char BYTE;

@@ -16,6 +16,6 @@ public:
 	BYTE get_joypad_state();
 	BYTE write_mem_timer(BYTE data);
 	BYTE get_clk_freq() const;
-	BYTE map_timer_counter(BYTE freq);
+	WORD map_timer_counter(BYTE freq);
 	BYTE Memory::read_mem(WORD addr) const;
 };

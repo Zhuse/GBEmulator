@@ -34,7 +34,7 @@ void Emulator::load_cartridge() {
 	memset(cartridge_mem, 0, sizeof(cartridge_mem));
 
 	FILE* f;
-	f = fopen("castelian.gb", "rb");
+	f = fopen("tim00.gb", "rb");
 	if (f == NULL) {
 		printf("Error opening ROM\n");
 	}
@@ -44,10 +44,11 @@ void Emulator::load_cartridge() {
 
 void Emulator::update_timers(int cycles) {
 	update_divider(cycles);
+	set_timer_freq();
     if (clock_enabled() && timer_limit) {
         timer_counter += cycles;
 
-        if (timer_counter >= timer_limit) {
+        while (timer_counter >= timer_limit) {
 
 			timer_counter -= timer_limit;
 			set_timer_freq();
@@ -71,7 +72,9 @@ void Emulator::update_divider(int cycles) {
 	}
 }
 void Emulator::set_timer_freq() {
-	timer_limit = mem->map_timer_counter((mem->read_mem(TMC)) & 3);
+	BYTE controller_reg = mem->read_mem(TMC);
+	BYTE timer_freq_mask = 0x3;
+	timer_limit = mem->map_timer_counter(controller_reg & timer_freq_mask);
 }
 
 bool Emulator::clock_enabled() {
@@ -192,7 +195,7 @@ void Emulator::draw_tiles(BYTE lcd_status_reg, bool window) {
 	BYTE scroll_x = mem->read_mem(SCROLL_X);
 	BYTE scroll_y = mem->read_mem(SCROLL_Y);
 	BYTE window_x = mem->read_mem(WINDOW_X) - 7;
-	BYTE window_y = mem->read_mem(WINDOW_Y);
+	BYTE window_y = mem->read_mem(WINDOW_Y) - 8;
 	WORD tile_map_base = map_select ? TILE_MAP_2_BASE : TILE_MAP_1_BASE;
 	BYTE current_tile = 0x0;
 	BYTE curr_scanline = mem->read_mem(CURR_SCANLINE);
@@ -294,7 +297,7 @@ void Emulator::set_lcd_status() {
 	BYTE curr_scanline = mem->read_mem(CURR_SCANLINE);
 	BYTE status = mem->read_mem(LCD_STATUS_REG);
 	BYTE old_mode = status & 0x3;
-	BYTE new_mode = V_BLANK_MODE;
+	BYTE new_mode = old_mode;
 
 	if (!lcd_enabled) {
 		mem->write_mem(CURR_SCANLINE, 0);

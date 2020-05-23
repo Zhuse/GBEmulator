@@ -52,10 +52,13 @@ int main(int argc, char**argv) {
                 }
             }
         }
-
 		emu->tick();
         draw_graphics(renderer, emu->screen);
 	}
+
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    return EXIT_SUCCESS;
 }
 
 void draw_graphics(SDL_Renderer* renderer, BYTE screen[SCREEN_H][SCREEN_W][3])

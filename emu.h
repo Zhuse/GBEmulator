@@ -11,7 +11,7 @@ private:
     WORD timer_counter = 0;
     WORD divide_counter = 0;
     WORD scanline_counter = 0;
-    WORD timer_limit = 0;
+    WORD timer_limit = 256;
     void update_timers(int cycles);
     void update_divider(int cycles);
     bool clock_enabled();

@@ -115,14 +115,18 @@ BYTE Memory::write_mem_timer(BYTE data) {
     return map_timer_counter(new_freq);
 }
 
-BYTE Memory::map_timer_counter(BYTE freq) {
+WORD Memory::map_timer_counter(BYTE freq) {
+    WORD mapped_freq;
     switch (freq)
     {
-        case 0x00: return 256;
-        case 0x01: return 4;
-        case 0x10: return 16;
-        case 0x11: return 64;
+    case 0x0: mapped_freq = 256; break;
+    case 0x1: mapped_freq = 4; break;
+    case 0x2: mapped_freq = 16; break;
+    case 0x3: mapped_freq = 64; break;
+    default: mapped_freq = 256; break;
     }
+
+    return mapped_freq;
 }
 
 void Memory::inc_divider_register() {
@@ -134,7 +138,7 @@ void Memory::inc_scanline_register() {
 }
 
 BYTE Memory::get_clk_freq() const {
-    return read_mem(TMC) & 0x11;
+    return read_mem(TMC) & 0x3;
 }
 // read memory should never modify member variables hence const
 BYTE Memory::read_mem(WORD addr) const

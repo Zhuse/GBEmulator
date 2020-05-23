@@ -704,7 +704,7 @@ unsigned int CPU::execute_next_opcode() {
 	}
 	default: break;
 	}
-	//print_state(opcode);
+	print_state(opcode);
 	clear_unused_bits();
 	return opcode_cycles_cb[opcode];
 }
