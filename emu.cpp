@@ -34,7 +34,7 @@ void Emulator::load_cartridge() {
 	memset(cartridge_mem, 0, sizeof(cartridge_mem));
 
 	FILE* f;
-	f = fopen("asteroids.gb", "rb");
+	f = fopen("kwirk.gb", "rb");
 	if (f == NULL) {
 		printf("Error opening ROM\n");
 	}
@@ -46,7 +46,8 @@ void Emulator::update_timers(int cycles) {
 	update_divider(cycles);
 	set_timer_freq();
     if (clock_enabled() && timer_limit) {
-        timer_counter += cycles;
+
+		timer_counter += cycles;
 
         while (timer_counter >= timer_limit) {
 
@@ -195,7 +196,7 @@ void Emulator::draw_tiles(BYTE lcd_status_reg, bool window) {
 	BYTE scroll_x = mem->read_mem(SCROLL_X);
 	BYTE scroll_y = mem->read_mem(SCROLL_Y);
 	BYTE window_x = mem->read_mem(WINDOW_X) - 7;
-	BYTE window_y = mem->read_mem(WINDOW_Y) - 8;
+	BYTE window_y = mem->read_mem(WINDOW_Y);
 	WORD tile_map_base = map_select ? TILE_MAP_2_BASE : TILE_MAP_1_BASE;
 	BYTE current_tile = 0x0;
 	BYTE curr_scanline = mem->read_mem(CURR_SCANLINE);
@@ -203,7 +204,7 @@ void Emulator::draw_tiles(BYTE lcd_status_reg, bool window) {
 	WORD tile_row = (tile_y / 8);
 	WORD tile_data_base;
 
-	if (window & (window_y < curr_scanline)) {
+	if (window & (window_y >= curr_scanline)) {
 		return;
 	}
 
@@ -220,7 +221,7 @@ void Emulator::draw_tiles(BYTE lcd_status_reg, bool window) {
 		BYTE tile_x;
 
 		if (window) {
-			tile_x = window_x - pxl;
+			tile_x = pxl - window_x;
 		}
 		else {
 			tile_x = pxl + scroll_x;

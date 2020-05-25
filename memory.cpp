@@ -4,6 +4,7 @@
 Memory::Memory(BYTE* cartridge_ptr) {
     cartridge = cartridge_ptr;
     joypad_state = 0xFF;
+    reset_timer_flag = false;
     init();
 }
 
@@ -76,6 +77,10 @@ void Memory::write_mem(WORD addr, BYTE data) {
     else if (addr == CURR_SCANLINE) {
         RAM[addr] = 0;
     }
+    else if (addr == TIMA) {
+        reset_timer_flag = true;
+        RAM[addr] = data;
+    }
     else if (addr == DMA_TRANSFER) {
         dma_transfer(data);
     }
@@ -103,6 +108,14 @@ void Memory::write_to_joypad(BYTE idx, bool pressed) {
     if (idx >= 0 && idx < 8) {
         pressed ? BIT_CLEAR(joypad_state, idx) : BIT_SET(joypad_state, idx);
     }
+}
+
+void Memory::disable_timer_flag() {
+    reset_timer_flag = false;
+}
+
+bool Memory::get_timer_flag() {
+    return reset_timer_flag;
 }
 
 BYTE Memory::get_joypad_state() {
