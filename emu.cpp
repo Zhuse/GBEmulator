@@ -34,7 +34,7 @@ void Emulator::load_cartridge() {
 	memset(cartridge_mem, 0, sizeof(cartridge_mem));
 
 	FILE* f;
-	f = fopen("kwirk.gb", "rb");
+	f = fopen("drmario.gb", "rb");
 	if (f == NULL) {
 		printf("Error opening ROM\n");
 	}
@@ -173,17 +173,15 @@ void Emulator::draw_sprites() {
 			BYTE spr_data2 = mem->read_mem(spr_data_addr + 1);
 
 			for (int x = 0; x < 8; x++) {
-				BYTE spr_pixel_idx;
+				BYTE spr_pixel_idx = x;
 				if (flip_x) {
 					spr_pixel_idx = 7 - x;
 				}
-				else {
-					spr_pixel_idx = x;
-				}
 				BYTE pixel_idx = (spr_x + spr_pixel_idx) % 8;
+				BYTE place_x = spr_x + ((spr_x + x) % 8);
 				BYTE pixel_colourcode = (BIT_CHECK(spr_data2, 7 - pixel_idx) << 1 | BIT_CHECK(spr_data1, 7 - pixel_idx));
 				if (pixel_colourcode != 0x0) {
-					assign_colour(spr_x + pixel_idx, curr_scanline, pixel_colourcode);
+					assign_colour(place_x, curr_scanline, pixel_colourcode);
 				}
 			}
 		}
