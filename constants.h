@@ -33,6 +33,8 @@
 #define DATA_TRANSFER_MODE 0x3
 
 #define SPRITE_SIZE_BYTES 16
+#define ROM_BANK_SIZE 16384
+#define RAM_BANK_SIZE 8192
 typedef unsigned char BYTE;
 typedef char SIGNED_BYTE;
 typedef unsigned short WORD;

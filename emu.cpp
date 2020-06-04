@@ -1,4 +1,4 @@
-#include "emu.h"
+ #include "emu.h"
 #include "memory.h"
 #include "cpu.h"
 #include "iostream"
@@ -34,7 +34,7 @@ void Emulator::load_cartridge() {
 	memset(cartridge_mem, 0, sizeof(cartridge_mem));
 
 	FILE* f;
-	f = fopen("drmario.gb", "rb");
+	f = fopen("castle.gb", "rb");
 	if (f == NULL) {
 		printf("Error opening ROM\n");
 	}

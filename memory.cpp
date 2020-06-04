@@ -5,16 +5,24 @@ Memory::Memory(BYTE* cartridge_ptr) {
     cartridge = cartridge_ptr;
     joypad_state = 0xFF;
     reset_timer_flag = false;
+    ram_enable = false;
+    rom_bank_num = 0x1;
+    ram_bank_num = 0x0;
+    ram_select = true;
     init();
 }
 
 void Memory::init() {
-    for (int i = 0; i < 0xFFFF; i++) {
+    for (int i = 0; i < sizeof(RAM); i++) {
         RAM[i] = 0x0;
     }
     for (int i = 0x0; i < 0x8000; i++) {
         RAM[i] = cartridge[i];
     }
+
+    // Get ROM banking type
+    set_bank_type();
+
     RAM[0xFF05] = 0x00;
     RAM[0xFF06] = 0x00;
     RAM[0xFF07] = 0x00;
@@ -47,6 +55,19 @@ void Memory::init() {
     RAM[0xFF4B] = 0x00;
     RAM[0xFFFF] = 0x00;
 }
+
+void Memory::set_bank_type() {
+    BYTE type = cartridge[0x147];
+
+    switch (type) {
+    case 0x1:
+    case 0x2:
+    case 0x3: bank_type = 1; break;
+    case 0x5:
+    case 0x6: bank_type = 2; break;
+    default: break;
+    }
+}
 void Memory::write_mem(WORD addr, BYTE data) {
 
     if (addr == 0xFF02 && data == 0x81) {
@@ -56,7 +77,7 @@ void Memory::write_mem(WORD addr, BYTE data) {
 
     if (addr < 0x8000)
     {
-        return;
+        bank_swap(addr, data);
     }
 
     // Duplicate echo RAM
@@ -94,6 +115,84 @@ void Memory::write_mem(WORD addr, BYTE data) {
     else
     {
         RAM[addr] = data;
+    }
+}
+
+void Memory::bank_swap(WORD addr, BYTE data) {
+    if (bank_type == 1) {
+        if (addr >= 0x0 && addr < 0x2000) {
+            if (data == 0xA) {
+                ram_enable = true;
+            }
+            else {
+                ram_enable = false;
+            }
+        }
+        else if (addr >= 0x2000 && addr < 0x4000) {
+            BYTE lo_five_mask = 0b11111;
+            BYTE new_bank_num = data & lo_five_mask;
+            if (new_bank_num == 0x0 || new_bank_num == 0x20 || new_bank_num == 0x40 || new_bank_num == 0x60) {
+                new_bank_num++;
+            }
+            rom_bank_num = new_bank_num;
+            write_rom_bank();
+        }
+        else if (addr >= 0x4000 && addr < 0x6000) {
+            BYTE new_bank_num = data & 0b11;
+            if (ram_select) {
+                swap_ram_bank(new_bank_num);
+            }
+            else {
+                write_rom_bank();
+            }
+        }
+        else if (addr >= 0x6000 && addr < 0x8000) {
+            BYTE new_data = data & 0x1;
+            if (new_data) {
+                ram_select = true;
+                write_ram_bank();
+            }
+            else {
+                ram_select = false;
+                write_rom_bank();
+            }
+        }
+    }
+}
+
+void Memory::write_rom_bank() {
+    BYTE new_rom_bank = rom_bank_num;
+    if (!ram_select) {
+        new_rom_bank &= (ram_bank_num << 5);
+    }
+    
+    unsigned int new_bank_addr = new_rom_bank * ROM_BANK_SIZE;
+    for (unsigned int idx = 0; idx < ROM_BANK_SIZE; idx++) {
+        RAM[0x4000 + idx] = cartridge[new_bank_addr + idx];
+    }
+}
+
+void Memory::swap_ram_bank(BYTE new_bank_num) {
+    BYTE old_ram_bank = ram_bank_num;
+
+    unsigned int old_bank_addr = old_ram_bank * RAM_BANK_SIZE;
+
+    if (ram_enable && ram_select) {
+        for (unsigned int idx = 0; idx < RAM_BANK_SIZE; idx++) {
+            RAM_BANKS[old_bank_addr + idx] = RAM[0xA000 + idx];
+        }
+        ram_bank_num = new_bank_num;
+        write_ram_bank();
+    }
+}
+
+void Memory::write_ram_bank() {
+    unsigned int new_bank_addr = ram_bank_num * RAM_BANK_SIZE;
+
+    if (ram_enable && ram_select) {
+        for (unsigned int idx = 0; idx < RAM_BANK_SIZE; idx++) {
+            RAM[0xA000 + idx] = RAM_BANKS[new_bank_addr + idx];
+        }
     }
 }
 
