@@ -34,7 +34,7 @@ void Emulator::load_cartridge() {
 	memset(cartridge_mem, 0, sizeof(cartridge_mem));
 
 	FILE* f;
-	f = fopen("castle.gb", "rb");
+	f = fopen("asteroids.gb", "rb");
 	if (f == NULL) {
 		printf("Error opening ROM\n");
 	}
@@ -164,22 +164,27 @@ void Emulator::draw_sprites() {
 		BYTE spr_num = mem->read_mem(spr_attr_addr + 2);
 		BYTE spr_attr = mem->read_mem(spr_attr_addr + 3);
 
+		if (spr_num % 2 == 1) {
+			spr_num--;
+		}
+
 		if (curr_scanline >= spr_y && curr_scanline < spr_y + spr_height) {
 			BYTE flip_x = BIT_CHECK(spr_attr, 5);
 			BYTE flip_y = BIT_CHECK(spr_attr, 6);
-			BYTE line_idx = flip_y? 0x7 - (curr_scanline - spr_y): curr_scanline - spr_y;
+			BYTE line_idx = flip_y? spr_height - (curr_scanline - spr_y): curr_scanline - spr_y;
 			WORD spr_data_addr = TILE_DATA_1_BASE + (spr_num * SPRITE_SIZE_BYTES) + line_idx * 2;
 			BYTE spr_data1 = mem->read_mem(spr_data_addr);
 			BYTE spr_data2 = mem->read_mem(spr_data_addr + 1);
 
-			for (int x = 0; x < 8; x++) {
-				BYTE spr_pixel_idx = x;
+			for (int x = 7; x >= 0; x--) {
+				SIGNED_WORD spr_pixel_idx = x;
 				if (flip_x) {
-					spr_pixel_idx = 7 - x;
+					spr_pixel_idx -= 7;
+					spr_pixel_idx *= -1;
 				}
-				BYTE pixel_idx = (spr_x + spr_pixel_idx) % 8;
-				BYTE place_x = spr_x + ((spr_x + x) % 8);
-				BYTE pixel_colourcode = (BIT_CHECK(spr_data2, 7 - pixel_idx) << 1 | BIT_CHECK(spr_data1, 7 - pixel_idx));
+				SIGNED_WORD place_x = 0 - x;
+				place_x += (spr_x + 7);
+				WORD pixel_colourcode = (BIT_CHECK(spr_data2, spr_pixel_idx) << 1 | BIT_CHECK(spr_data1, spr_pixel_idx));
 				if (pixel_colourcode != 0x0) {
 					assign_colour(place_x, curr_scanline, pixel_colourcode);
 				}
