@@ -10,7 +10,7 @@ const int SCALE = 3;
 
 std::map<SDL_Keycode, unsigned char> get_keyboard();
 
-void draw_graphics(SDL_Renderer* renderer, BYTE screen[SCREEN_H][SCREEN_W][3]);
+void draw_graphics(SDL_Renderer* renderer, std::array<std::array<BYTE, 3>, SCREEN_W>* screen);
 
 int main(int argc, char**argv) {
 	Emulator *emu = new Emulator();
@@ -53,7 +53,7 @@ int main(int argc, char**argv) {
             }
         }
 		emu->tick();
-        draw_graphics(renderer, emu->screen);
+        draw_graphics(renderer, emu->get_screen());
 	}
 
     SDL_DestroyWindow(window);
@@ -61,7 +61,7 @@ int main(int argc, char**argv) {
     return EXIT_SUCCESS;
 }
 
-void draw_graphics(SDL_Renderer* renderer, BYTE screen[SCREEN_H][SCREEN_W][3])
+void draw_graphics(SDL_Renderer* renderer, std::array<std::array<BYTE, 3>, SCREEN_W>* screen)
 {
     SDL_Rect rect;
     rect.w = SCALE;

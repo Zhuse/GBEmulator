@@ -121,12 +121,14 @@
     <ClCompile Include="emu.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="memory.cpp" />
+    <ClCompile Include="ppu.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="constants.h" />
     <ClInclude Include="cpu.h" />
     <ClInclude Include="emu.h" />
     <ClInclude Include="memory.h" />
+    <ClInclude Include="ppu.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
