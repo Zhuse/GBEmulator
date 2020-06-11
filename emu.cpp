@@ -1,7 +1,9 @@
- #include "emu.h"
+#include "emu.h"
 #include "memory.h"
 #include "cpu.h"
 #include "ppu.h"
+#include "divider_counter.h"
+#include "main_timer.h"
 #include "iostream"
 #include "fstream"
 
@@ -10,6 +12,8 @@ Emulator::Emulator() {
 	mem = new Memory(cartridge_mem);
 	cpu = new CPU(mem);
 	ppu = new PPU(mem, cpu);
+	div_reg = new DividerCounter(mem);
+	timer = new MainTimer(mem, cpu);
 }
 void Emulator::tick() {
 	unsigned int tick_cycles = 0;
@@ -36,7 +40,7 @@ void Emulator::load_cartridge() {
 	memset(cartridge_mem, 0, sizeof(cartridge_mem));
 
 	FILE* f;
-	f = fopen("mario.gb", "rb");
+	f = fopen("castle.gb", "rb");
 	if (f == NULL) {
 		printf("Error opening ROM\n");
 	}
@@ -45,43 +49,8 @@ void Emulator::load_cartridge() {
 }
 
 void Emulator::update_timers(int cycles) {
-	update_divider(cycles);
-	set_timer_freq();
-    if (clock_enabled() && timer_limit) {
-
-		timer_counter += cycles;
-
-        while (timer_counter >= timer_limit) {
-
-			timer_counter -= timer_limit;
-			set_timer_freq();
-
-            // Timer overflow
-            if (mem->read_mem(TIMA) == 0xFF) {
-                mem->write_mem(TIMA, mem->read_mem(TMA));
-				cpu->req_interrupt(2);
-            } else {
-                mem->write_mem(TIMA, mem->read_mem(TIMA) + 1);
-            }
-        }
-    }
-}
-
-void Emulator::update_divider(int cycles) {
-	divide_counter += cycles;
-	if (divide_counter >= 0xFF) {
-		divide_counter = 0;
-		mem->inc_divider_register();
-	}
-}
-void Emulator::set_timer_freq() {
-	BYTE controller_reg = mem->read_mem(TMC);
-	BYTE timer_freq_mask = 0x3;
-	timer_limit = mem->map_timer_counter(controller_reg & timer_freq_mask);
-}
-
-bool Emulator::clock_enabled() {
-	return BIT_CHECK(mem->read_mem(TMC), 2);
+	div_reg->update_timer(cycles);
+	timer->update_timer(cycles);
 }
 
 void Emulator::register_keypress(BYTE key) {
@@ -107,6 +76,7 @@ void Emulator::register_keypress(BYTE key) {
 void Emulator::unregister_keypress(BYTE key) {
 	mem->write_to_joypad(key, false);
 }
+
 
 std::array<std::array<BYTE, 3>, SCREEN_W>* Emulator::get_screen() {
 	return ppu->screen.data();

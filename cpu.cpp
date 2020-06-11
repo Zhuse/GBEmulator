@@ -89,7 +89,6 @@ unsigned int CPU::execute_opcode() {
 	//Fetch opCode
 
 	opcode = RAM->read_mem(PC);
-	// fprintf(trace, "\n============================\nPC: %02X,     OPCODE: %02X \n", PC, opcode);
 	// print_state(opcode);
 	PC++;
 	switch (opcode) {
@@ -704,7 +703,6 @@ unsigned int CPU::execute_next_opcode() {
 	}
 	default: break;
 	}
-	print_state(opcode);
 	clear_unused_bits();
 	return opcode_cycles_cb[opcode];
 }

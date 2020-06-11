@@ -220,26 +220,6 @@ bool Memory::get_timer_flag() {
 BYTE Memory::get_joypad_state() {
     return joypad_state;
 }
-BYTE Memory::write_mem_timer(BYTE data) {
-    RAM[TMC] = data;
-    BYTE new_freq = read_mem(TMC);
-
-    return map_timer_counter(new_freq);
-}
-
-WORD Memory::map_timer_counter(BYTE freq) {
-    WORD mapped_freq;
-    switch (freq)
-    {
-    case 0x0: mapped_freq = 256; break;
-    case 0x1: mapped_freq = 4; break;
-    case 0x2: mapped_freq = 16; break;
-    case 0x3: mapped_freq = 64; break;
-    default: mapped_freq = 256; break;
-    }
-
-    return mapped_freq;
-}
 
 void Memory::inc_divider_register() {
     RAM[DIVIDER_REG]++;
@@ -252,18 +232,11 @@ void Memory::inc_scanline_register() {
 BYTE Memory::get_clk_freq() const {
     return read_mem(TMC) & 0x3;
 }
+
 // read memory should never modify member variables hence const
 BYTE Memory::read_mem(WORD addr) const
 {
-    if ((addr >= 0x4000) && (addr <= 0x7FFF))
-    {
-    }
-
-    else if ((addr >= 0xA000) && (addr <= 0xBFFF))
-    {
-
-    }
-    else if (addr == JOYPAD) {
+    if (addr == JOYPAD) {
         BYTE joypad = RAM[addr];
         bool select = BIT_CHECK(joypad, 5);
         bool directional = BIT_CHECK(joypad, 4);

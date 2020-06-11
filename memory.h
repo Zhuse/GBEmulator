@@ -28,7 +28,6 @@ public:
 	void disable_timer_flag();
 	bool get_timer_flag();
 	BYTE get_joypad_state();
-	BYTE write_mem_timer(BYTE data);
 	BYTE get_clk_freq() const;
 	WORD map_timer_counter(BYTE freq);
 	BYTE Memory::read_mem(WORD addr) const;

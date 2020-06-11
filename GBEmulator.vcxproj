@@ -118,17 +118,23 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="cpu.cpp" />
+    <ClCompile Include="divider_counter.cpp" />
     <ClCompile Include="emu.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="main_timer.cpp" />
+    <ClCompile Include="main_timer.h" />
     <ClCompile Include="memory.cpp" />
     <ClCompile Include="ppu.cpp" />
+    <ClCompile Include="timer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="constants.h" />
     <ClInclude Include="cpu.h" />
+    <ClInclude Include="divider_counter.h" />
     <ClInclude Include="emu.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="ppu.h" />
+    <ClInclude Include="timer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
