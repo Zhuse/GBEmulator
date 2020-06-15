@@ -1,46 +1,62 @@
-#define JOYPAD 0xFF00
-#define DIVIDER_REG 0xFF04
-#define TIMA 0xFF05
-#define TMA 0xFF06
-#define TMC 0xFF07
-#define IF 0xFF0F
-#define IE 0xFFFF
-#define CLOCK_SPEED 1048576
-#define CURR_SCANLINE 0xFF44
-#define LCD_CONTROL_REG 0xFF40
-#define LCD_STATUS_REG 0xFF41
-#define DMA_TRANSFER 0xFF46
-#define OAM_BASE 0xFE00
-#define SCROLL_Y 0xFF42
-#define SCROLL_X 0xFF43
-#define WINDOW_Y 0xFF4A
-#define WINDOW_X 0xFF4B
-#define TILE_MAP_1_BASE 0x9800
-#define TILE_MAP_2_BASE 0x9C00
-#define TILE_DATA_1_BASE 0x8000
-#define TILE_DATA_2_BASE 0x9000
+#ifndef CONSTANTS_H
+#define CONSTANTS_H
 
-
-#define SCREEN_H 144
-#define SCREEN_W 160
-#define BACKGROUND_H 256
-#define BACKGROUND_W 256
-#define CYCLES_PER_SCANLINE 114
-#define LAST_SCANLINE 153
-#define H_BLANK_MODE 0x0
-#define V_BLANK_MODE 0x1
-#define SPRITE_SEARCH_MODE 0x2
-#define DATA_TRANSFER_MODE 0x3
-
-#define SPRITE_SIZE_BYTES 16
-#define ROM_BANK_SIZE 16384
-#define RAM_BANK_SIZE 8192
-typedef unsigned char BYTE;
-typedef char SIGNED_BYTE;
-typedef unsigned short WORD;
-typedef signed short SIGNED_WORD;
+#include "cstdint"
 
 #define BIT_SET(a,b) ((a) |= (1ULL<<(b)))
 #define BIT_CLEAR(a,b) ((a) &= ~(1ULL<<(b)))
 #define BIT_FLIP(a,b) ((a) ^= (1ULL<<(b)))
 #define BIT_CHECK(a,b) (!!((a) & (1ULL<<(b))))
+
+namespace Addresses {
+	const int JOYPAD = 0xFF00;
+	const int DIVIDER_REG = 0xFF04;
+	const int TIMA = 0xFF05;
+	const int TMA = 0xFF06;
+	const int TMC = 0xFF07;
+	const int IF = 0xFF0F;
+	const int IE = 0xFFFF;
+	const int CURR_SCANLINE = 0xFF44;
+	const int LCD_CONTROL_REG = 0xFF40;
+	const int LCD_STATUS_REG = 0xFF41;
+	const int DMA_TRANSFER = 0xFF46;
+	const int OAM_BASE = 0xFE00;
+	const int SCROLL_Y = 0xFF42;
+	const int SCROLL_X = 0xFF43;
+	const int WINDOW_Y = 0xFF4A;
+	const int WINDOW_X = 0xFF4B;
+	const int TILE_MAP_1_BASE = 0x9800;
+	const int TILE_MAP_2_BASE = 0x9C00;
+	const int TILE_DATA_1_BASE = 0x8000;
+	const int TILE_DATA_2_BASE = 0x9000;
+}
+
+namespace Frequencies {
+	const int CLOCK_SPEED = 1048576;
+	const int CYCLES_PER_SCANLINE = 114;
+	const int MAX_CYCLES_PER_TICK = 17476;
+}
+
+namespace GraphicSpecs {
+	const int SCREEN_H = 144;
+	const int SCREEN_W = 160;
+	const int BACKGROUND_H = 256;
+	const int BACKGROUND_W = 256;
+	const int CYCLES_PER_SCANLINE = 114;
+	const int LAST_SCANLINE = 153;
+	const int SPRITE_SIZE_IN_BYTES = 16;
+	const int H_BLANK_MODE = 0x0;
+	const int V_BLANK_MODE = 0x1;
+	const int SPRITE_SEARCH_MODE = 0x2;
+	const int DATA_TRANSFER_MODE = 0x3;
+}
+
+namespace MemorySpecs {
+	const int ROM_BANK_SIZE = 0x4000;
+	const int RAM_BANK_SIZE = 0x2000;
+}
+
+
+
+
+#endif

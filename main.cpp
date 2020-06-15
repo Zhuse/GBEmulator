@@ -10,7 +10,7 @@ const int SCALE = 3;
 
 std::map<SDL_Keycode, unsigned char> get_keyboard();
 
-void draw_graphics(SDL_Renderer* renderer, std::array<std::array<BYTE, 3>, SCREEN_W>* screen);
+void draw_graphics(SDL_Renderer* renderer, std::array<std::array<uint8_t, 3>, GraphicSpecs::SCREEN_W>* screen);
 
 int main(int argc, char**argv) {
 	Emulator *emu = new Emulator();
@@ -61,7 +61,7 @@ int main(int argc, char**argv) {
     return EXIT_SUCCESS;
 }
 
-void draw_graphics(SDL_Renderer* renderer, std::array<std::array<BYTE, 3>, SCREEN_W>* screen)
+void draw_graphics(SDL_Renderer* renderer, std::array<std::array<uint8_t, 3>, GraphicSpecs::SCREEN_W>* screen)
 {
     SDL_Rect rect;
     rect.w = SCALE;
@@ -70,9 +70,9 @@ void draw_graphics(SDL_Renderer* renderer, std::array<std::array<BYTE, 3>, SCREE
     {
         for (unsigned int x = 0; x < WINDOW_W; x++)
         {
-            BYTE r = screen[y][x][0];
-            BYTE g = screen[y][x][1];
-            BYTE b = screen[y][x][2];
+            uint8_t r = screen[y][x][0];
+            uint8_t g = screen[y][x][1];
+            uint8_t b = screen[y][x][2];
             rect.x = x * SCALE;
             rect.y = y * SCALE;
             SDL_SetRenderDrawColor(renderer, r, g, b, 100);

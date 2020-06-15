@@ -2,6 +2,8 @@
 #include "memory.h"
 #include "cpu.h"
 
+using namespace Addresses;
+
 MainTimer::MainTimer(Memory* mem, CPU* cpu_ptr) : Timer{ mem, 0xFF, 0xFF, 0, TIMA }, cpu{ cpu_ptr } {}
 
 bool MainTimer::clock_enabled() {
@@ -21,8 +23,8 @@ void MainTimer::update_timer(int cycles) {
 }
 
 void MainTimer::set_timer_freq() {
-    BYTE controller_reg = mem->read_mem(TMC);
-    BYTE timer_freq_mask = 0x3;
+    uint8_t controller_reg = mem->read_mem(TMC);
+    uint8_t timer_freq_mask = 0x3;
     cycles_period = map_timer_counter(controller_reg & timer_freq_mask);
 }
 
@@ -39,8 +41,8 @@ void MainTimer::on_overflow() {
     }
 }
 
-WORD MainTimer::map_timer_counter(BYTE freq) {
-    WORD mapped_freq;
+uint16_t MainTimer::map_timer_counter(uint8_t freq) {
+    uint16_t mapped_freq;
     switch (freq)
     {
     case 0x0: mapped_freq = 256; break;

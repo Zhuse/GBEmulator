@@ -1,7 +1,11 @@
 #include "memory.h"
 #include "iostream"
+#include "cstdint"
 
-Memory::Memory(BYTE* cartridge_ptr) {
+using namespace Addresses;
+using namespace MemorySpecs;
+
+Memory::Memory(uint8_t* cartridge_ptr) {
     cartridge = cartridge_ptr;
     joypad_state = 0xFF;
     reset_timer_flag = false;
@@ -20,9 +24,10 @@ void Memory::init() {
         RAM[i] = cartridge[i];
     }
 
-    // Get ROM banking type
+    /* Get ROM banking type */
     set_bank_type();
 
+    /* Set initial memory state documented after BOOT ROM */
     RAM[0xFF05] = 0x00;
     RAM[0xFF06] = 0x00;
     RAM[0xFF07] = 0x00;
@@ -57,44 +62,51 @@ void Memory::init() {
 }
 
 void Memory::set_bank_type() {
-    BYTE type = cartridge[0x147];
+    uint8_t type = cartridge[0x147];
 
     switch (type) {
-    case 0x1:
-    case 0x2:
-    case 0x3: bank_type = 1; break;
     case 0x5:
     case 0x6: bank_type = 2; break;
-    default: break;
+    case 0x1:
+    case 0x2:
+    case 0x3:
+    default: bank_type = 1; break;
     }
 }
-void Memory::write_mem(WORD addr, BYTE data) {
+void Memory::write_mem(uint16_t addr, uint8_t data) {
 
+    /* For specific test ROMS that print results via I/O */
     if (addr == 0xFF02 && data == 0x81) {
         std::cout << read_mem(0xFF01);
         return;
     }
 
+    /* Swap ROM/RAM banks depending on input */
     if (addr < 0x8000)
     {
         bank_swap(addr, data);
     }
 
-    // Duplicate echo RAM
+    /* Echo RAM */
     else if ((addr >= 0xE000) && (addr < 0xFE00))
     {
         RAM[addr] = data;
         write_mem(addr - 0x2000, data);
     }
 
+    /* Invalid write address */
     else if ((addr >= 0xFEA0) && (addr < 0xFEFF))
     {
         return;
     }
+
+    /* Reset divider register if written to */
     else if (addr == DIVIDER_REG) 
     {
         RAM[addr] = 0;
     }
+
+    /* Reset current scanline register if written to */
     else if (addr == CURR_SCANLINE) {
         RAM[addr] = 0;
     }
@@ -105,20 +117,24 @@ void Memory::write_mem(WORD addr, BYTE data) {
     else if (addr == DMA_TRANSFER) {
         dma_transfer(data);
     }
+
+    /* Determine type of button pressed and parse joypad input */
     else if (addr == JOYPAD) {
-        BYTE joypad_data = RAM[addr];
+        uint8_t joypad_data = RAM[addr];
         BIT_CHECK(data, 5) ? BIT_SET(joypad_data, 5) : BIT_CLEAR(joypad_data, 5);
         BIT_CHECK(data, 4) ? BIT_SET(joypad_data, 4) : BIT_CLEAR(joypad_data, 4);
         RAM[addr] = joypad_data;
         return;
     }
+
+    /* Else write the data */
     else
     {
         RAM[addr] = data;
     }
 }
 
-void Memory::bank_swap(WORD addr, BYTE data) {
+void Memory::bank_swap(uint16_t addr, uint8_t data) {
     if (bank_type == 1) {
         if (addr >= 0x0 && addr < 0x2000) {
             if (data == 0xA) {
@@ -129,8 +145,8 @@ void Memory::bank_swap(WORD addr, BYTE data) {
             }
         }
         else if (addr >= 0x2000 && addr < 0x4000) {
-            BYTE lo_five_mask = 0b11111;
-            BYTE new_bank_num = data & lo_five_mask;
+            uint8_t lo_five_mask = 0b11111;
+            uint8_t new_bank_num = data & lo_five_mask;
             if (new_bank_num == 0x0 || new_bank_num == 0x20 || new_bank_num == 0x40 || new_bank_num == 0x60) {
                 new_bank_num++;
             }
@@ -138,7 +154,7 @@ void Memory::bank_swap(WORD addr, BYTE data) {
             write_rom_bank();
         }
         else if (addr >= 0x4000 && addr < 0x6000) {
-            BYTE new_bank_num = data & 0b11;
+            uint8_t new_bank_num = data & 0b11;
             if (ram_select) {
                 swap_ram_bank(new_bank_num);
             }
@@ -147,7 +163,7 @@ void Memory::bank_swap(WORD addr, BYTE data) {
             }
         }
         else if (addr >= 0x6000 && addr < 0x8000) {
-            BYTE new_data = data & 0x1;
+            uint8_t new_data = data & 0x1;
             if (new_data) {
                 ram_select = true;
                 write_ram_bank();
@@ -161,7 +177,7 @@ void Memory::bank_swap(WORD addr, BYTE data) {
 }
 
 void Memory::write_rom_bank() {
-    BYTE new_rom_bank = rom_bank_num;
+    uint8_t new_rom_bank = rom_bank_num;
     if (!ram_select) {
         new_rom_bank &= (ram_bank_num << 5);
     }
@@ -172,8 +188,8 @@ void Memory::write_rom_bank() {
     }
 }
 
-void Memory::swap_ram_bank(BYTE new_bank_num) {
-    BYTE old_ram_bank = ram_bank_num;
+void Memory::swap_ram_bank(uint8_t new_bank_num) {
+    uint8_t old_ram_bank = ram_bank_num;
 
     unsigned int old_bank_addr = old_ram_bank * RAM_BANK_SIZE;
 
@@ -196,14 +212,14 @@ void Memory::write_ram_bank() {
     }
 }
 
-void Memory::dma_transfer(BYTE data) {
-    WORD spr_base = data << 8;
+void Memory::dma_transfer(uint8_t data) {
+    uint16_t spr_base = data << 8;
     for (int i = 0; i < 0xA0; i++) {
         write_mem(OAM_BASE + i, read_mem(spr_base + i));
     }
 }
 
-void Memory::write_to_joypad(BYTE idx, bool pressed) {
+void Memory::write_to_joypad(uint8_t idx, bool pressed) {
     if (idx >= 0 && idx < 8) {
         pressed ? BIT_CLEAR(joypad_state, idx) : BIT_SET(joypad_state, idx);
     }
@@ -217,7 +233,7 @@ bool Memory::get_timer_flag() {
     return reset_timer_flag;
 }
 
-BYTE Memory::get_joypad_state() {
+uint8_t Memory::get_joypad_state() {
     return joypad_state;
 }
 
@@ -229,19 +245,18 @@ void Memory::inc_scanline_register() {
     RAM[CURR_SCANLINE]++;
 }
 
-BYTE Memory::get_clk_freq() const {
+uint8_t Memory::get_clk_freq() const {
     return read_mem(TMC) & 0x3;
 }
 
-// read memory should never modify member variables hence const
-BYTE Memory::read_mem(WORD addr) const
+uint8_t Memory::read_mem(uint16_t addr) const
 {
     if (addr == JOYPAD) {
-        BYTE joypad = RAM[addr];
+        uint8_t joypad = RAM[addr];
         bool select = BIT_CHECK(joypad, 5);
         bool directional = BIT_CHECK(joypad, 4);
-        BYTE hi_nibble = (joypad & 0x30);
-        BYTE lo_nibble;
+        uint8_t hi_nibble = (joypad & 0x30);
+        uint8_t lo_nibble;
 
         if (select && !directional) {
             lo_nibble = joypad_state & 0x0F;
@@ -254,6 +269,5 @@ BYTE Memory::read_mem(WORD addr) const
         }
         return hi_nibble | lo_nibble;
     }
-    // else return memory
     return RAM[addr];
 }

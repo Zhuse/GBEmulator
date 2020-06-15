@@ -7,17 +7,17 @@ class Memory;
 class Timer
 {
 protected:
-    WORD timer_counter;
-    WORD timer_init;
-    WORD timer_limit;
-    WORD timer_addr;
-    WORD cycles_period;
+    uint16_t timer_counter;
+    uint16_t timer_init;
+    uint16_t timer_limit;
+    uint16_t timer_addr;
+    uint16_t cycles_period;
     Memory* mem;
 public:
-    Timer(Memory* mem_ptr, WORD period, WORD limit, WORD init, WORD addr);
-    WORD get_counter();
-    void set_counter(WORD val);
-    void set_period(WORD new_period);
+    Timer(Memory* mem_ptr, uint16_t period, uint16_t limit, uint16_t init, uint16_t addr);
+    uint16_t get_counter();
+    void set_counter(uint16_t val);
+    void set_period(uint16_t new_period);
     virtual void on_overflow();
     virtual void update_timer(int cycles);
 };

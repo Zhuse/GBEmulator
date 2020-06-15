@@ -2,6 +2,8 @@
 #include "memory.h"
 #include "iostream"
 
+using namespace Addresses;
+
 CPU::CPU(Memory* RAM_ptr) {
 	init();
 	RAM = RAM_ptr;
@@ -40,7 +42,7 @@ void CPU::check_ie_deactivation() {
 
 void CPU::serve_interrupt(int idx) {
 	master_interrupt = false;
-	BYTE req = RAM->read_mem(IF);
+	uint8_t req = RAM->read_mem(IF);
 	BIT_CLEAR(req, idx);
 	RAM->write_mem(IF, req);
 
@@ -57,14 +59,14 @@ void CPU::serve_interrupt(int idx) {
 
 void CPU::req_interrupt(int idx)
 {
-	BYTE req = RAM->read_mem(IF);
+	uint8_t req = RAM->read_mem(IF);
 	BIT_SET(req, idx);
 	RAM->write_mem(IF, req);
 }
 
 void CPU::serve_interrupts() {
-	BYTE reqs = RAM->read_mem(IF);
-	BYTE ie = RAM->read_mem(IE);
+	uint8_t reqs = RAM->read_mem(IF);
+	uint8_t ie = RAM->read_mem(IE);
 
 	if (master_interrupt || halted) {
 		for (int i = 0; i < 5; i++) {
@@ -84,13 +86,14 @@ void CPU::serve_interrupts() {
 
 
 unsigned int CPU::execute_opcode() {
-	BYTE opcode = 0x0;
+	uint8_t opcode = 0x0;
 
-	//Fetch opCode
+	/* Fetch */
 
 	opcode = RAM->read_mem(PC);
-	// print_state(opcode);
 	PC++;
+
+	/* Decode/Execute */
 	switch (opcode) {
 
 	// LD nn,n
@@ -175,7 +178,7 @@ unsigned int CPU::execute_opcode() {
 	case 0x74: LOAD_16BIT_TO_MEM(&reg_HL, &reg_HL.hi); break;
 	case 0x75: LOAD_16BIT_TO_MEM(&reg_HL, &reg_HL.lo); break;
 	case 0x36: {
-		BYTE data = RAM->read_mem(PC);
+		uint8_t data = RAM->read_mem(PC);
 		LOAD_16BIT_TO_MEM(&reg_HL, &data);
 		PC++;
 		break;
@@ -205,10 +208,10 @@ unsigned int CPU::execute_opcode() {
 	case 0xEA: LOAD_8BIT_IMMEDIATE(&reg_AF.hi); break;
 
 	/** LD A, (C) **/
-	case 0xF2: LOAD_8BIT_FROM_MEM(&reg_AF.hi, (WORD)reg_BC.lo, 0xFF00); break;
+	case 0xF2: LOAD_8BIT_FROM_MEM(&reg_AF.hi, (uint16_t)reg_BC.lo, 0xFF00); break;
 
 	/** LD (C), A **/
-	case 0xE2: LOAD_8BIT_INTO_MEM((WORD)reg_BC.lo, &reg_AF.hi, 0xFF00); break;
+	case 0xE2: LOAD_8BIT_INTO_MEM((uint16_t)reg_BC.lo, &reg_AF.hi, 0xFF00); break;
 	
 	/** LDD A,(HL) **/
 	case 0x3A: LDD_A_HL(); break;
@@ -353,7 +356,7 @@ unsigned int CPU::execute_opcode() {
 	case 0x24: INC_N(&reg_HL.hi); break;
 	case 0x2C: INC_N(&reg_HL.lo); break;
 	case 0x34: {
-		BYTE b = RAM->read_mem(reg_HL.val);
+		uint8_t b = RAM->read_mem(reg_HL.val);
 		INC_N(&b);
 		RAM->write_mem(reg_HL.val, b);
 		break;
@@ -368,7 +371,7 @@ unsigned int CPU::execute_opcode() {
 	case 0x25: DEC_N(&reg_HL.hi); break;
 	case 0x2D: DEC_N(&reg_HL.lo); break;
 	case 0x35: {
-		BYTE b = RAM->read_mem(reg_HL.val);
+		uint8_t b = RAM->read_mem(reg_HL.val);
 		DEC_N(&b);
 		RAM->write_mem(reg_HL.val, b);
 		break;
@@ -447,7 +450,7 @@ unsigned int CPU::execute_opcode() {
 
 	/** JR n **/
 	case 0x18: {
-		BYTE result = RAM->read_mem(PC);
+		uint8_t result = RAM->read_mem(PC);
 		if (result < 0x80) {
 			PC += result + 1;
 		}
@@ -509,11 +512,13 @@ unsigned int CPU::execute_opcode() {
 }
 
 unsigned int CPU::execute_next_opcode() {
-	BYTE opcode = 0x0;
+	uint8_t opcode = 0x0;
 
-	//Fetch opCode
+	/* Fetch */
 	opcode = RAM->read_mem(PC);
 	PC++;
+
+	/* Decode/Execute */
 	switch (opcode) {
 	case 0x37: SWAP(&reg_AF.hi); break;
 	case 0x30: SWAP(&reg_BC.hi); break;
@@ -523,7 +528,7 @@ unsigned int CPU::execute_next_opcode() {
 	case 0x34: SWAP(&reg_HL.hi); break;
 	case 0x35: SWAP(&reg_HL.lo); break;
 	case 0x36: {
-		BYTE data = RAM->read_mem(reg_HL.val);
+		uint8_t data = RAM->read_mem(reg_HL.val);
 		SWAP(&data);
 		RAM->write_mem(reg_HL.val, data);
 		break;
@@ -538,7 +543,7 @@ unsigned int CPU::execute_next_opcode() {
 	case 0x04: RLC(&reg_HL.hi, false); break;
 	case 0x05: RLC(&reg_HL.lo, false); break;
 	case 0x06: {
-		BYTE data = RAM->read_mem(reg_HL.val);
+		uint8_t data = RAM->read_mem(reg_HL.val);
 		RLC(&data, false);
 		RAM->write_mem(reg_HL.val, data);
 		break;
@@ -553,7 +558,7 @@ unsigned int CPU::execute_next_opcode() {
 	case 0x14: RL(&reg_HL.hi, false); break;
 	case 0x15: RL(&reg_HL.lo, false); break;
 	case 0x16: {
-		BYTE data = RAM->read_mem(reg_HL.val);
+		uint8_t data = RAM->read_mem(reg_HL.val);
 		RL(&data, false);
 		RAM->write_mem(reg_HL.val, data);
 		break;
@@ -568,7 +573,7 @@ unsigned int CPU::execute_next_opcode() {
 	case 0x0C: RRC(&reg_HL.hi, false); break;
 	case 0x0D: RRC(&reg_HL.lo, false); break;
 	case 0x0E: {
-		BYTE data = RAM->read_mem(reg_HL.val);
+		uint8_t data = RAM->read_mem(reg_HL.val);
 		RRC(&data, false);
 		RAM->write_mem(reg_HL.val, data);
 		break;
@@ -582,7 +587,7 @@ unsigned int CPU::execute_next_opcode() {
 	case 0x1C: RR(&reg_HL.hi, false); break;
 	case 0x1D: RR(&reg_HL.lo, false); break;
 	case 0x1E: {
-		BYTE data = RAM->read_mem(reg_HL.val);
+		uint8_t data = RAM->read_mem(reg_HL.val);
 		RR(&data, false);
 		RAM->write_mem(reg_HL.val, data);
 		break;
@@ -597,7 +602,7 @@ unsigned int CPU::execute_next_opcode() {
 	case 0x24: SLA(&reg_HL.hi); break;
 	case 0x25: SLA(&reg_HL.lo); break;
 	case 0x26: {
-		BYTE data = RAM->read_mem(reg_HL.val);
+		uint8_t data = RAM->read_mem(reg_HL.val);
 		SLA(&data);
 		RAM->write_mem(reg_HL.val, data);
 		break;
@@ -612,7 +617,7 @@ unsigned int CPU::execute_next_opcode() {
 	case 0x2C: SRA(&reg_HL.hi); break;
 	case 0x2D: SRA(&reg_HL.lo); break;
 	case 0x2E: {
-		BYTE data = RAM->read_mem(reg_HL.val);
+		uint8_t data = RAM->read_mem(reg_HL.val);
 		SRA(&data);
 		RAM->write_mem(reg_HL.val, data);
 		break;
@@ -627,7 +632,7 @@ unsigned int CPU::execute_next_opcode() {
 	case 0x3C: SRL(&reg_HL.hi); break;
 	case 0x3D: SRL(&reg_HL.lo); break;
 	case 0x3E: {
-		BYTE data = RAM->read_mem(reg_HL.val);
+		uint8_t data = RAM->read_mem(reg_HL.val);
 		SRL(&data);
 		RAM->write_mem(reg_HL.val, data);
 		break;
@@ -645,11 +650,11 @@ unsigned int CPU::execute_next_opcode() {
 		break;
 	}
 	case 0x46: case 0x4E: case 0x56: case 0x5E: case 0x66: case 0x6E: case 0x76: case 0x7E: {
-		BYTE hi_nibble = (opcode & 0xF0) >> 4;
-		BYTE lo_nibble = opcode & 0xF;
-		BYTE index_base = 2 * (hi_nibble - 0x4);
-		BYTE index_add = lo_nibble / (0x8);
-		BYTE data = RAM->read_mem(reg_HL.val);
+		uint8_t hi_nibble = (opcode & 0xF0) >> 4;
+		uint8_t lo_nibble = opcode & 0xF;
+		uint8_t index_base = 2 * (hi_nibble - 0x4);
+		uint8_t index_add = lo_nibble / (0x8);
+		uint8_t data = RAM->read_mem(reg_HL.val);
 		BIT_B_R(&data, index_base + index_add);
 		break;
 	}
@@ -668,11 +673,11 @@ unsigned int CPU::execute_next_opcode() {
 	}
 
 	case 0x86: case 0x8E: case 0x96: case 0x9E: case 0xA6: case 0xAE: case 0xB6: case 0xBE: {
-		BYTE hi_nibble = (opcode & 0xF0) >> 4;
-		BYTE lo_nibble = opcode & 0xF;
-		BYTE index_base = 2 * (hi_nibble - 0x8);
-		BYTE index_add = lo_nibble / (0x8);
-		BYTE data = RAM->read_mem(reg_HL.val);
+		uint8_t hi_nibble = (opcode & 0xF0) >> 4;
+		uint8_t lo_nibble = opcode & 0xF;
+		uint8_t index_base = 2 * (hi_nibble - 0x8);
+		uint8_t index_add = lo_nibble / (0x8);
+		uint8_t data = RAM->read_mem(reg_HL.val);
 		RES_B_R(&data, index_base + index_add);
 		RAM->write_mem(reg_HL.val, data);
 		break;
@@ -692,11 +697,11 @@ unsigned int CPU::execute_next_opcode() {
 	}
 
 	case 0xC6: case 0xCE: case 0xD6: case 0xDE: case 0xE6: case 0xEE: case 0xF6: case 0xFE: {
-		BYTE hi_nibble = (opcode & 0xF0) >> 4;
-		BYTE lo_nibble = opcode & 0xF;
-		BYTE index_base = 2 * (hi_nibble - 0xC);
-		BYTE index_add = lo_nibble / (0x8);
-		BYTE data = RAM->read_mem(reg_HL.val);
+		uint8_t hi_nibble = (opcode & 0xF0) >> 4;
+		uint8_t lo_nibble = opcode & 0xF;
+		uint8_t index_base = 2 * (hi_nibble - 0xC);
+		uint8_t index_add = lo_nibble / (0x8);
+		uint8_t data = RAM->read_mem(reg_HL.val);
 		SET_B_R(&data, index_base + index_add);
 		RAM->write_mem(reg_HL.val, data);
 		break;
@@ -708,7 +713,7 @@ unsigned int CPU::execute_next_opcode() {
 }
 /** 8 bit load **/
 
-void CPU::print_state(BYTE opcode) {
+void CPU::print_state(uint8_t opcode) {
 	fprintf(trace, "\n===========================================\n");
 	fprintf(trace, "OPCODE: %02X\n", opcode);
 	fprintf(trace, "REG AF: %02X        FF40: %02X\n", reg_AF.val, RAM->read_mem(0xFF40));
@@ -731,30 +736,30 @@ void CPU::print_state(BYTE opcode) {
 void CPU::clear_unused_bits() {
 	reg_AF.lo &= 0xF0;
 }
-void CPU::LOAD_8BIT(BYTE* reg) {
+void CPU::LOAD_8BIT(uint8_t* reg) {
 	*reg = RAM->read_mem(PC);
 	PC += 1;
 }
 
-void CPU::LOAD_8BIT_IMMEDIATE(BYTE* reg) {
+void CPU::LOAD_8BIT_IMMEDIATE(uint8_t* reg) {
 	RAM->write_mem((RAM->read_mem(PC + 1) << 8 | RAM->read_mem(PC)), *reg);
 	PC += 2;
 }
 
-void CPU::LOAD_8BIT_REG(BYTE* r1, BYTE* r2) {
+void CPU::LOAD_8BIT_REG(uint8_t* r1, uint8_t* r2) {
 	*r1 = *r2;
 }
 
-void CPU::LOAD_8BIT_FROM_MEM(BYTE* reg, WORD addr, WORD immediate) {
+void CPU::LOAD_8BIT_FROM_MEM(uint8_t* reg, uint16_t addr, uint16_t immediate) {
 	*reg = RAM->read_mem(addr + immediate);
 }
 
-void CPU::LOAD_8BIT_FROM_MEM_IMMEDIATE(BYTE* reg) {
+void CPU::LOAD_8BIT_FROM_MEM_IMMEDIATE(uint8_t* reg) {
 	*reg = RAM->read_mem((RAM->read_mem(PC + 1) << 8 | RAM->read_mem(PC)));
 	PC += 2;
 }
 
-void CPU::LOAD_8BIT_INTO_MEM(WORD addr, BYTE* reg, WORD immediate) {
+void CPU::LOAD_8BIT_INTO_MEM(uint16_t addr, uint8_t* reg, uint16_t immediate) {
 	RAM->write_mem(addr + immediate, *reg);
 }
 
@@ -803,7 +808,7 @@ void CPU::LOAD_16BIT(Register* reg) {
 }
 
 
-void CPU::LOAD_16BIT_TO_MEM(Register* reg_16, BYTE* reg) {
+void CPU::LOAD_16BIT_TO_MEM(Register* reg_16, uint8_t* reg) {
 	 RAM->write_mem(reg_16->val, *reg);
 }
 
@@ -811,13 +816,13 @@ void CPU::LOAD_16BIT_REG(Register* r1, Register* r2) {
 	r1->val = r2->val;
 }
 
-void CPU::LOAD_16BIT_REG_IMMEDIATE(Register* r1, Register* r2, WORD immediate) {
+void CPU::LOAD_16BIT_REG_IMMEDIATE(Register* r1, Register* r2, uint16_t immediate) {
 	r1->val = r2->val + immediate;
 }
 
-void CPU::LD_NN_SP(WORD immediate) {
-	BYTE hi_nibble = (SP.val & 0xFF00) >> 8;
-	BYTE lo_nibble = (SP.val & 0x00FF);
+void CPU::LD_NN_SP(uint16_t immediate) {
+	uint8_t hi_nibble = (SP.val & 0xFF00) >> 8;
+	uint8_t lo_nibble = (SP.val & 0x00FF);
 	RAM->write_mem((RAM->read_mem(PC + 1) << 8) | (RAM->read_mem(PC)), lo_nibble);
 	RAM->write_mem(((RAM->read_mem(PC + 1) << 8) | (RAM->read_mem(PC))) + 1, hi_nibble);
 	PC += 2;
@@ -825,7 +830,7 @@ void CPU::LD_NN_SP(WORD immediate) {
 
 void CPU::LDHL_SP() {
 	int result = SP.val;
-	SIGNED_BYTE data = RAM->read_mem(PC);
+	int8_t data = RAM->read_mem(PC);
 	
 	reg_AF.lo = 0;
 	
@@ -839,31 +844,31 @@ void CPU::LDHL_SP() {
 	if ((carry_info & 0x100) == 0x100)
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_C);
 
-	reg_HL.val = (WORD)result;
+	reg_HL.val = (uint16_t)result;
 	PC++;
 }
-void CPU::PUSH_NN(WORD addr) {
-	BYTE hi_nibble = (addr & 0xFF00) >> 8;
-	BYTE lo_nibble = (addr & 0x00FF);
+void CPU::PUSH_NN(uint16_t addr) {
+	uint8_t hi_nibble = (addr & 0xFF00) >> 8;
+	uint8_t lo_nibble = (addr & 0x00FF);
 	SP.val--;
 	RAM->write_mem(SP.val, hi_nibble);
 	SP.val--;
 	RAM->write_mem(SP.val, lo_nibble);
 }
 
-void CPU::POP_NN(WORD* reg) {
-	WORD addr = (RAM->read_mem(SP.val + 1) << 8) | (RAM->read_mem(SP.val));
+void CPU::POP_NN(uint16_t* reg) {
+	uint16_t addr = (RAM->read_mem(SP.val + 1) << 8) | (RAM->read_mem(SP.val));
 	*reg = addr;
 	SP.val += 2;
 }
 
 /** 8-bit arithmetic **/
-void CPU::ADD_N_N(BYTE* reg, BYTE val, bool immediate, bool carry) {
+void CPU::ADD_N_N(uint8_t* reg, uint8_t val, bool immediate, bool carry) {
 	int result = (int)*reg;
 	int adding = 0;
 	if (immediate)
 	{
-		BYTE n = RAM->read_mem(PC);
+		uint8_t n = RAM->read_mem(PC);
 		PC++;
 		adding = n;
 	}
@@ -890,19 +895,19 @@ void CPU::ADD_N_N(BYTE* reg, BYTE val, bool immediate, bool carry) {
 	if ((carry_info & 0x100) == 0x100)
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_C);
 
-	*reg = (BYTE)result;
+	*reg = (uint8_t)result;
 
 	if (*reg == 0) {
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_Z);
 	}
 }
 
-void CPU::SUB_N_N(BYTE* reg, BYTE val, bool immediate, bool borrow) {
+void CPU::SUB_N_N(uint8_t* reg, uint8_t val, bool immediate, bool borrow) {
 	int result = (int)*reg;
 	int subbing = 0;
 	if (immediate)
 	{
-		BYTE n = RAM->read_mem(PC);
+		uint8_t n = RAM->read_mem(PC);
 		PC++;
 		subbing = n;
 	}
@@ -930,20 +935,20 @@ void CPU::SUB_N_N(BYTE* reg, BYTE val, bool immediate, bool borrow) {
 	if ((carry_info & 0x100) == 0x100)
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_C);
 
-	*reg = (BYTE)result;
+	*reg = (uint8_t)result;
 
 	if (*reg == 0) {
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_Z);
 	}
 }
 
-void CPU::AND_N_N(BYTE* reg, BYTE val, bool immediate) {
-	BYTE old = *reg;
-	BYTE anding = 0;
+void CPU::AND_N_N(uint8_t* reg, uint8_t val, bool immediate) {
+	uint8_t old = *reg;
+	uint8_t anding = 0;
 
 	if (immediate)
 	{
-		BYTE n = RAM->read_mem(PC);
+		uint8_t n = RAM->read_mem(PC);
 		PC++;
 		anding = n;
 	}
@@ -962,13 +967,13 @@ void CPU::AND_N_N(BYTE* reg, BYTE val, bool immediate) {
 
 }
 
-void CPU::OR_N_N(BYTE* reg, BYTE val, bool immediate) {
-	BYTE old = *reg;
-	BYTE oring = 0;
+void CPU::OR_N_N(uint8_t* reg, uint8_t val, bool immediate) {
+	uint8_t old = *reg;
+	uint8_t oring = 0;
 
 	if (immediate)
 	{
-		BYTE n = RAM->read_mem(PC);
+		uint8_t n = RAM->read_mem(PC);
 		PC++;
 		oring = n;
 	}
@@ -985,13 +990,13 @@ void CPU::OR_N_N(BYTE* reg, BYTE val, bool immediate) {
 	}
 }
 
-void CPU::XOR_N_N(BYTE* reg, BYTE val, bool immediate) {
-	BYTE old = *reg;
-	BYTE xoring = 0;
+void CPU::XOR_N_N(uint8_t* reg, uint8_t val, bool immediate) {
+	uint8_t old = *reg;
+	uint8_t xoring = 0;
 
 	if (immediate)
 	{
-		BYTE n = RAM->read_mem(PC);
+		uint8_t n = RAM->read_mem(PC);
 		PC++;
 		xoring = n;
 	}
@@ -1008,14 +1013,14 @@ void CPU::XOR_N_N(BYTE* reg, BYTE val, bool immediate) {
 	}
 }
 
-void CPU::CP_N_N(BYTE* reg, BYTE val, bool immediate) {
-	BYTE old = *reg;
-	BYTE result = 0;
-	BYTE sub = 0;
+void CPU::CP_N_N(uint8_t* reg, uint8_t val, bool immediate) {
+	uint8_t old = *reg;
+	uint8_t result = 0;
+	uint8_t sub = 0;
 
 	if (immediate)
 	{
-		BYTE n = RAM->read_mem(PC);
+		uint8_t n = RAM->read_mem(PC);
 		PC++;
 		sub = n;
 	}
@@ -1036,15 +1041,15 @@ void CPU::CP_N_N(BYTE* reg, BYTE val, bool immediate) {
 	if (old < sub)
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_C);
 
-	SIGNED_WORD htest = (old & 0xF);
+	int16_t htest = (old & 0xF);
 	htest -= (sub & 0xF);
 
 	if (htest < 0)
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_H);
 }
 
-void CPU::INC_N(BYTE* reg) {
-	BYTE old = *reg;
+void CPU::INC_N(uint8_t* reg) {
+	uint8_t old = *reg;
 
 	*reg += 1;
 
@@ -1057,7 +1062,7 @@ void CPU::INC_N(BYTE* reg) {
 		reg_AF.lo = BIT_CLEAR(reg_AF.lo, FLAG_Z);
 	}
 
-	WORD htest = (old & 0xF);
+	uint16_t htest = (old & 0xF);
 	htest += 0x1;
 
 	if (htest > 0xF)
@@ -1066,8 +1071,8 @@ void CPU::INC_N(BYTE* reg) {
 		reg_AF.lo = BIT_CLEAR(reg_AF.lo, FLAG_H);
 }
 
-void CPU::DEC_N(BYTE* reg) {
-	BYTE old = *reg;
+void CPU::DEC_N(uint8_t* reg) {
+	uint8_t old = *reg;
 
 	*reg -= 1;
 
@@ -1080,7 +1085,7 @@ void CPU::DEC_N(BYTE* reg) {
 		reg_AF.lo = BIT_CLEAR(reg_AF.lo, FLAG_Z);
 	}
 
-	WORD htest = (old & 0xF);
+	uint16_t htest = (old & 0xF);
 	htest -= 0x1;
 
 	if (htest > 0xF)
@@ -1104,12 +1109,12 @@ void CPU::ADD_HL(Register* reg) {
 	if (c_test >= 0x10000)
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_C);
 
-	reg_HL.val = (WORD)c_test;
+	reg_HL.val = (uint16_t)c_test;
 }
 
 void CPU::ADD_SP() {
 	int result = SP.val;
-	SIGNED_BYTE data = RAM->read_mem(PC);
+	int8_t data = RAM->read_mem(PC);
 
 	reg_AF.lo = 0;
 
@@ -1124,7 +1129,7 @@ void CPU::ADD_SP() {
 	if ((carry_info & 0x100) == 0x100)
 		reg_AF.lo = BIT_SET(reg_AF.lo, FLAG_C);
 
-	SP.val = (WORD)result;
+	SP.val = (uint16_t)result;
 	PC++;
 }
 
@@ -1136,8 +1141,8 @@ void CPU::DEC_NN(Register* reg) {
 	reg->val--;
 }
 
-void CPU::SWAP(BYTE* reg) {
-	BYTE old = *reg;
+void CPU::SWAP(uint8_t* reg) {
+	uint8_t old = *reg;
 
 	reg_AF.lo = 0;
 	*reg = ((old & 0x0F) << 4 | (old & 0xF0) >> 4);
@@ -1198,8 +1203,8 @@ void CPU::SCF() {
 	BIT_SET(reg_AF.lo, FLAG_C);
 }
 
-void CPU::RLC(BYTE* reg, bool regA) {
-	BYTE result = *reg;
+void CPU::RLC(uint8_t* reg, bool regA) {
+	uint8_t result = *reg;
 
 	reg_AF.lo = 0;
 	if (BIT_CHECK(*reg, 7)) {
@@ -1219,9 +1224,9 @@ void CPU::RLC(BYTE* reg, bool regA) {
 	}
 }
 
-void CPU::RL(BYTE* reg, bool is_RLA) {
-	BYTE result = *reg;
-	BYTE old_flag = BIT_CHECK(reg_AF.lo, FLAG_C);
+void CPU::RL(uint8_t* reg, bool is_RLA) {
+	uint8_t result = *reg;
+	uint8_t old_flag = BIT_CHECK(reg_AF.lo, FLAG_C);
 
 	reg_AF.lo = 0;
 	if (BIT_CHECK(*reg, 7)) {
@@ -1238,8 +1243,8 @@ void CPU::RL(BYTE* reg, bool is_RLA) {
 	}
 }
 
-void CPU::RRC(BYTE* reg, bool regA) {
-	BYTE result = *reg;
+void CPU::RRC(uint8_t* reg, bool regA) {
+	uint8_t result = *reg;
 
 	reg_AF.lo = 0;
 	if (BIT_CHECK(*reg, 0)) {
@@ -1259,10 +1264,10 @@ void CPU::RRC(BYTE* reg, bool regA) {
 	}
 }
 
-void CPU::RR(BYTE* reg, bool is_RRA) {
+void CPU::RR(uint8_t* reg, bool is_RRA) {
 
-	BYTE result = *reg;
-	BYTE old_flag = BIT_CHECK(reg_AF.lo, FLAG_C);
+	uint8_t result = *reg;
+	uint8_t old_flag = BIT_CHECK(reg_AF.lo, FLAG_C);
 
 	reg_AF.lo = 0;
 	if (BIT_CHECK(*reg, 0)) {
@@ -1280,8 +1285,8 @@ void CPU::RR(BYTE* reg, bool is_RRA) {
 
 }
 
-void CPU::SLA(BYTE* reg) {
-	BYTE old = *reg;
+void CPU::SLA(uint8_t* reg) {
+	uint8_t old = *reg;
 
 	reg_AF.lo = 0;
 
@@ -1296,8 +1301,8 @@ void CPU::SLA(BYTE* reg) {
 		BIT_SET(reg_AF.lo, FLAG_Z);
 }
 
-void CPU::SRA(BYTE* reg) {
-	BYTE old = *reg;
+void CPU::SRA(uint8_t* reg) {
+	uint8_t old = *reg;
 
 	reg_AF.lo = 0;
 
@@ -1312,8 +1317,8 @@ void CPU::SRA(BYTE* reg) {
 		BIT_SET(reg_AF.lo, FLAG_Z);
 }
 
-void CPU::SRL(BYTE* reg) {
-	BYTE old = *reg;
+void CPU::SRL(uint8_t* reg) {
+	uint8_t old = *reg;
 
 	reg_AF.lo = 0;
 
@@ -1329,16 +1334,16 @@ void CPU::SRL(BYTE* reg) {
 
 }
 
-void CPU::BIT_HELPER(BYTE opcode) {
-	BYTE hi_nibble = (opcode & 0xF0) >> 4;
-	BYTE lo_nibble = opcode & 0xF;
-	BYTE* reg = registers[lo_nibble % 8];
-	BYTE index_base = 2*(hi_nibble - 0x4);
-	BYTE index_add = lo_nibble / (0x8);
+void CPU::BIT_HELPER(uint8_t opcode) {
+	uint8_t hi_nibble = (opcode & 0xF0) >> 4;
+	uint8_t lo_nibble = opcode & 0xF;
+	uint8_t* reg = registers[lo_nibble % 8];
+	uint8_t index_base = 2*(hi_nibble - 0x4);
+	uint8_t index_add = lo_nibble / (0x8);
 	BIT_B_R(reg, index_base + index_add);
 }
 
-void CPU::BIT_B_R(BYTE* reg, unsigned int index) {
+void CPU::BIT_B_R(uint8_t* reg, unsigned int index) {
 	if (!BIT_CHECK(*reg, index))
 		BIT_SET(reg_AF.lo, FLAG_Z);
 	else
@@ -1348,29 +1353,29 @@ void CPU::BIT_B_R(BYTE* reg, unsigned int index) {
 	BIT_SET(reg_AF.lo, FLAG_H);
 }
 
-void CPU::RES_HELPER(BYTE opcode) {
-	BYTE hi_nibble = (opcode & 0xF0) >> 4;
-	BYTE lo_nibble = opcode & 0xF;
-	BYTE* reg = registers[lo_nibble % 8];
-	BYTE index_base = 2 * (hi_nibble - 0x8);
-	BYTE index_add = lo_nibble / (0x8);
+void CPU::RES_HELPER(uint8_t opcode) {
+	uint8_t hi_nibble = (opcode & 0xF0) >> 4;
+	uint8_t lo_nibble = opcode & 0xF;
+	uint8_t* reg = registers[lo_nibble % 8];
+	uint8_t index_base = 2 * (hi_nibble - 0x8);
+	uint8_t index_add = lo_nibble / (0x8);
 	RES_B_R(reg, index_base + index_add);
 }
 
-void CPU::RES_B_R(BYTE* reg, unsigned int index) {
+void CPU::RES_B_R(uint8_t* reg, unsigned int index) {
 	BIT_CLEAR(*reg, index);
 }
 
-void CPU::SET_HELPER(BYTE opcode) {
-	BYTE hi_nibble = (opcode & 0xF0) >> 4;
-	BYTE lo_nibble = opcode & 0xF;
-	BYTE* reg = registers[lo_nibble % 0x8];
-	BYTE index_base = 2 * (hi_nibble - 0xC);
-	BYTE index_add = lo_nibble / (0x8);
+void CPU::SET_HELPER(uint8_t opcode) {
+	uint8_t hi_nibble = (opcode & 0xF0) >> 4;
+	uint8_t lo_nibble = opcode & 0xF;
+	uint8_t* reg = registers[lo_nibble % 0x8];
+	uint8_t index_base = 2 * (hi_nibble - 0xC);
+	uint8_t index_add = lo_nibble / (0x8);
 	SET_B_R(reg, index_base + index_add);
 }
 
-void CPU::SET_B_R(BYTE* reg, unsigned int index) {
+void CPU::SET_B_R(uint8_t* reg, unsigned int index) {
 	BIT_SET(*reg, index);
 }
 
@@ -1401,13 +1406,13 @@ bool CPU::JP_CC(bool nz, bool z, bool nc, bool c) {
 }
 
 bool CPU::JR_CC(bool nz, bool z, bool nc, bool c) {
-	BYTE add = RAM->read_mem(PC);
+	uint8_t add = RAM->read_mem(PC);
 	if (nz) {
 		if (!BIT_CHECK(reg_AF.lo, FLAG_Z)) {
 			if (add < 0x80)
 				PC += add + 1;
 			else
-				PC -= (BYTE)(0xFF - add);
+				PC -= (uint8_t)(0xFF - add);
 			return true;
 		}
 	}
@@ -1416,7 +1421,7 @@ bool CPU::JR_CC(bool nz, bool z, bool nc, bool c) {
 			if (add < 0x7F)
 				PC += add + 1;
 			else
-				PC -= (BYTE)(0xFF - add);
+				PC -= (uint8_t)(0xFF - add);
 
 			return true;
 		}
@@ -1426,7 +1431,7 @@ bool CPU::JR_CC(bool nz, bool z, bool nc, bool c) {
 			if (add < 0x7F)
 				PC += add + 1;
 			else
-				PC -= (BYTE)(0xFF - add);
+				PC -= (uint8_t)(0xFF - add);
 
 			return true;
 		}
@@ -1436,7 +1441,7 @@ bool CPU::JR_CC(bool nz, bool z, bool nc, bool c) {
 			if (add < 0x7F)
 				PC += add + 1;
 			else
-				PC -= (BYTE)(0xFF - add);
+				PC -= (uint8_t)(0xFF - add);
 
 			return true;
 		}
@@ -1447,7 +1452,7 @@ bool CPU::JR_CC(bool nz, bool z, bool nc, bool c) {
 }
 
 void CPU::CALL() {
-	WORD immediate = ((RAM->read_mem(PC + 1) << 8) | RAM->read_mem(PC));
+	uint16_t immediate = ((RAM->read_mem(PC + 1) << 8) | RAM->read_mem(PC));
 	PUSH_NN(PC + 2);
 	PC = immediate;
 }
@@ -1481,7 +1486,7 @@ bool CPU::CALL_CC(bool nz, bool z, bool nc, bool c) {
 	return false;
 }
 
-void CPU::RST(BYTE immediate) {
+void CPU::RST(uint8_t immediate) {
 	PUSH_NN(PC);
 	PC = immediate;
 }
@@ -1515,7 +1520,7 @@ bool CPU::RET_CC(bool nz, bool z, bool nc, bool c) {
 }
 
 void CPU::RET() {
-	WORD new_addr;
+	uint16_t new_addr;
 	POP_NN(&new_addr);
 	PC = new_addr;
 }

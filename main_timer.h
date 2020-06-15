@@ -1,3 +1,6 @@
+#ifndef MAIN_TIMER_H
+#define MAIN_TIMER_H
+
 #include "constants.h"
 #include "timer.h"
 
@@ -7,10 +10,12 @@ private:
 	CPU* cpu;
 	bool clock_enabled();
 	void set_timer_freq();
-	WORD map_timer_counter(BYTE freq);
+	uint16_t map_timer_counter(uint8_t freq);
 
 public:
 	MainTimer(Memory* mem, CPU* cpu_ptr);
 	void on_overflow();
 	void update_timer(int cycles);
 };
+
+#endif

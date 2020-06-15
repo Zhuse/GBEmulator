@@ -2,7 +2,9 @@
 #include "timer.h"
 #include "memory.h"
 
-Timer::Timer(Memory* mem_ptr, WORD period, WORD limit, WORD init, WORD addr) {
+using namespace Addresses;
+
+Timer::Timer(Memory* mem_ptr, uint16_t period, uint16_t limit, uint16_t init, uint16_t addr) {
 	mem = mem_ptr;
 	cycles_period = period;
 	timer_limit = limit;
@@ -11,12 +13,12 @@ Timer::Timer(Memory* mem_ptr, WORD period, WORD limit, WORD init, WORD addr) {
 	timer_addr = addr;
 }
 
-WORD Timer::get_counter() {
+uint16_t Timer::get_counter() {
 	return timer_counter;
 }
 
 void Timer::on_overflow() {
-	BYTE timer_val = mem->read_mem(timer_addr);
+	uint8_t timer_val = mem->read_mem(timer_addr);
 	timer_counter -= cycles_period;
 	if (mem->read_mem(timer_addr) >= timer_limit) {
 		mem->write_mem(timer_addr, timer_init);
@@ -33,11 +35,11 @@ void Timer::update_timer(int cycles) {
 	}
 }
 
-void Timer::set_period(WORD new_period) {
+void Timer::set_period(uint16_t new_period) {
 	cycles_period = new_period;
 }
 
 // Avoid using this function if possible
-void Timer::set_counter(WORD val) {
+void Timer::set_counter(uint16_t val) {
 	timer_counter = val;
 }
