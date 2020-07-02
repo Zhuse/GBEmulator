@@ -10,8 +10,8 @@
 
 using namespace Addresses;
 
-Emulator::Emulator() {
-	load_cartridge();
+Emulator::Emulator(char * rom) {
+	load_cartridge(rom);
 	mem = new Memory(cartridge_mem);
 	cpu = new CPU(mem);
 	ppu = new PPU(mem, cpu);
@@ -46,13 +46,13 @@ void Emulator::tick() {
 	}
 }
 
-void Emulator::load_cartridge() {
+void Emulator::load_cartridge(char* rom) {
 
 	/* Reset memory */
 	memset(cartridge_mem, 0, sizeof(cartridge_mem));
 
 	FILE* f;
-	f = fopen("castle.gb", "rb");
+	f = fopen(rom, "rb");
 	if (f == NULL) {
 		printf("Error opening ROM\n");
 	}

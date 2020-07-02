@@ -13,7 +13,7 @@ std::map<SDL_Keycode, unsigned char> get_keyboard();
 void draw_graphics(SDL_Renderer* renderer, std::array<std::array<uint8_t, 3>, GraphicSpecs::SCREEN_W>* screen);
 
 int main(int argc, char**argv) {
-	Emulator *emu = new Emulator();
+	Emulator *emu = new Emulator(argv[1]);
 
     SDL_Window* window = NULL;
     SDL_Event event;

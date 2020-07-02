@@ -20,9 +20,9 @@ private:
 
 public:
     uint8_t cartridge_mem[0x200000];
-    Emulator();
+    Emulator(char* rom);
     void tick();
-    void load_cartridge();
+    void load_cartridge(char* rom);
     void register_keypress(uint8_t key);
     void unregister_keypress(uint8_t key);
     std::array<std::array<uint8_t, 3>, GraphicSpecs::SCREEN_W>* get_screen();
