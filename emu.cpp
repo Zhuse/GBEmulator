@@ -6,6 +6,7 @@
 #include "main_timer.h"
 #include "iostream"
 #include "fstream"
+#include "chrono"
 
 using namespace Addresses;
 
@@ -19,6 +20,8 @@ Emulator::Emulator() {
 }
 void Emulator::tick() {
 	unsigned int tick_cycles = 0;
+	auto start = std::chrono::system_clock::now();
+
 	while (tick_cycles < Frequencies::MAX_CYCLES_PER_TICK) {
 		
 		/* Execute opcode and add cycles of opcode to counter */
@@ -34,6 +37,12 @@ void Emulator::tick() {
 		/* Parse interrupts */
 		cpu->serve_interrupts();
 
+	}
+
+	std::chrono::duration<double> diff = std::chrono::system_clock::now() - start;
+	double frame_rate = (1 / 60);
+	while (diff.count() < frame_rate) {
+		diff = std::chrono::system_clock::now() - start;
 	}
 }
 

@@ -41,6 +41,9 @@ int main(int argc, char**argv) {
             }
             else if (event.type == SDL_KEYDOWN) { //Handle keyboard key press
                 event_key = event.key.keysym.sym;
+                if (event_key == SDLK_ESCAPE) {
+                    break;
+                }
                 if (controller.count(event_key) == 1) {
                     emu->register_keypress(controller[event_key]);
                 }
