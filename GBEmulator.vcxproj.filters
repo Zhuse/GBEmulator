@@ -27,55 +27,55 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="src\cpu.cpp">
+      <Filter>Source Files\hardware</Filter>
+    </ClCompile>
+    <ClCompile Include="src\emu.cpp">
+      <Filter>Source Files\hardware</Filter>
+    </ClCompile>
+    <ClCompile Include="src\memory.cpp">
+      <Filter>Source Files\hardware</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ppu.cpp">
+      <Filter>Source Files\hardware</Filter>
+    </ClCompile>
+    <ClCompile Include="src\divider_counter.cpp">
+      <Filter>Source Files\timers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main_timer.cpp">
+      <Filter>Source Files\timers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\timer.cpp">
+      <Filter>Source Files\timers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="main_timer.h">
-      <Filter>Header Files\timers</Filter>
-    </ClCompile>
-    <ClCompile Include="divider_counter.cpp">
-      <Filter>Source Files\timers</Filter>
-    </ClCompile>
-    <ClCompile Include="timer.cpp">
-      <Filter>Source Files\timers</Filter>
-    </ClCompile>
-    <ClCompile Include="main_timer.cpp">
-      <Filter>Source Files\timers</Filter>
-    </ClCompile>
-    <ClCompile Include="cpu.cpp">
-      <Filter>Source Files\hardware</Filter>
-    </ClCompile>
-    <ClCompile Include="emu.cpp">
-      <Filter>Source Files\hardware</Filter>
-    </ClCompile>
-    <ClCompile Include="memory.cpp">
-      <Filter>Source Files\hardware</Filter>
-    </ClCompile>
-    <ClCompile Include="ppu.cpp">
-      <Filter>Source Files\hardware</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="timer.h">
+    <ClInclude Include="src\cpu.h">
+      <Filter>Header Files\hardware</Filter>
+    </ClInclude>
+    <ClInclude Include="src\emu.h">
+      <Filter>Header Files\hardware</Filter>
+    </ClInclude>
+    <ClInclude Include="src\memory.h">
+      <Filter>Header Files\hardware</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ppu.h">
+      <Filter>Header Files\hardware</Filter>
+    </ClInclude>
+    <ClInclude Include="src\divider_counter.h">
       <Filter>Header Files\timers</Filter>
     </ClInclude>
-    <ClInclude Include="divider_counter.h">
+    <ClInclude Include="src\main_timer.h">
       <Filter>Header Files\timers</Filter>
     </ClInclude>
-    <ClInclude Include="cpu.h">
-      <Filter>Header Files\hardware</Filter>
-    </ClInclude>
-    <ClInclude Include="emu.h">
-      <Filter>Header Files\hardware</Filter>
-    </ClInclude>
-    <ClInclude Include="ppu.h">
-      <Filter>Header Files\hardware</Filter>
-    </ClInclude>
-    <ClInclude Include="memory.h">
-      <Filter>Header Files\hardware</Filter>
+    <ClInclude Include="src\timer.h">
+      <Filter>Header Files\timers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

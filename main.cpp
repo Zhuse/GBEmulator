@@ -6,11 +6,11 @@
 
 const int WINDOW_W = 160;
 const int WINDOW_H = 144;
+const int SCALE = 1;
 
 std::map<SDL_Keycode, unsigned char> get_keyboard();
 
-void draw_graphics(SDL_Renderer* renderer, std::array<std::array<uint8_t, 3>, GraphicSpecs::SCREEN_W>* screen, int scale);
-void sdl_close(SDL_Window* window);
+void draw_graphics(SDL_Renderer* renderer, std::array<std::array<uint8_t, 3>, GraphicSpecs::SCREEN_W>* screen);
 
 int main(int argc, char**argv) {
 	Emulator *emu = new Emulator(argv[1]);
@@ -19,28 +19,14 @@ int main(int argc, char**argv) {
     SDL_Event event;
     SDL_Keycode event_key;
     SDL_Renderer* renderer;
-    int scale;
-
-    if (argc <= 2) {
-        scale = 1;
-    }
-    else {
-        try {
-            sscanf(argv[2], "%d", &scale);
-        }
-        catch (int e) {
-            std::cout << "Scale is not an integer";
-            return EXIT_FAILURE;
-        }
-    }
 
     std::map<SDL_Keycode, unsigned char> controller = get_keyboard();
 
     window = SDL_CreateWindow(
         "GBEmulator", SDL_WINDOWPOS_UNDEFINED,
         SDL_WINDOWPOS_UNDEFINED,
-        WINDOW_W * scale,
-        WINDOW_H * scale,
+        WINDOW_W * SCALE,
+        WINDOW_H * SCALE,
         SDL_WINDOW_SHOWN);
 
     // Setup renderer
@@ -70,18 +56,19 @@ int main(int argc, char**argv) {
             }
         }
 		emu->tick();
-        draw_graphics(renderer, emu->get_screen(), scale);
+        draw_graphics(renderer, emu->get_screen());
 	}
 
-    sdl_close(window);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
     return EXIT_SUCCESS;
 }
 
-void draw_graphics(SDL_Renderer* renderer, std::array<std::array<uint8_t, 3>, GraphicSpecs::SCREEN_W>* screen, int scale)
+void draw_graphics(SDL_Renderer* renderer, std::array<std::array<uint8_t, 3>, GraphicSpecs::SCREEN_W>* screen)
 {
     SDL_Rect rect;
-    rect.w = scale;
-    rect.h = scale;
+    rect.w = SCALE;
+    rect.h = SCALE;
     for (unsigned int y = 0; y < WINDOW_H; y++)
     {
         for (unsigned int x = 0; x < WINDOW_W; x++)
@@ -89,8 +76,8 @@ void draw_graphics(SDL_Renderer* renderer, std::array<std::array<uint8_t, 3>, Gr
             uint8_t r = screen[y][x][0];
             uint8_t g = screen[y][x][1];
             uint8_t b = screen[y][x][2];
-            rect.x = x * scale;
-            rect.y = y * scale;
+            rect.x = x * SCALE;
+            rect.y = y * SCALE;
             SDL_SetRenderDrawColor(renderer, r, g, b, 100);
             SDL_RenderFillRect(renderer, &rect);
         }
@@ -124,9 +111,4 @@ std::map<SDL_Keycode, unsigned char> get_keyboard() {
         keyboard.insert(std::make_pair(controller[i], controller_mapped[i]));
     }
     return keyboard;
-}
-
-void sdl_close(SDL_Window* window) {
-    SDL_DestroyWindow(window);
-    SDL_Quit();
 }

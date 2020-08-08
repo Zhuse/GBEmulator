@@ -117,24 +117,24 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="cpu.cpp" />
-    <ClCompile Include="divider_counter.cpp" />
-    <ClCompile Include="emu.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="main_timer.cpp" />
-    <ClCompile Include="main_timer.h" />
-    <ClCompile Include="memory.cpp" />
-    <ClCompile Include="ppu.cpp" />
-    <ClCompile Include="timer.cpp" />
+    <ClCompile Include="src\cpu.cpp" />
+    <ClCompile Include="src\divider_counter.cpp" />
+    <ClCompile Include="src\emu.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\main_timer.cpp" />
+    <ClCompile Include="src\memory.cpp" />
+    <ClCompile Include="src\ppu.cpp" />
+    <ClCompile Include="src\timer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="constants.h" />
-    <ClInclude Include="cpu.h" />
-    <ClInclude Include="divider_counter.h" />
-    <ClInclude Include="emu.h" />
-    <ClInclude Include="memory.h" />
-    <ClInclude Include="ppu.h" />
-    <ClInclude Include="timer.h" />
+    <ClInclude Include="src\cpu.h" />
+    <ClInclude Include="src\divider_counter.h" />
+    <ClInclude Include="src\emu.h" />
+    <ClInclude Include="src\main_timer.h" />
+    <ClInclude Include="src\memory.h" />
+    <ClInclude Include="src\ppu.h" />
+    <ClInclude Include="src\timer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
