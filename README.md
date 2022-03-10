@@ -1,4 +1,4 @@
-# GBEmulator
+# GBEmulator (https://github.com/Zhuse/GBEmulator)
 
 An emulator for the Game Boy handheld console written in C++ using OpenGL.
 
